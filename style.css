@@ -134,3 +134,24 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
   .brand-logo-svg{width:min(330px,96vw)}
   .button-row{display:grid;grid-template-columns:1fr;}
 }
+
+/* Mutation report generator */
+.brand-logo-img{
+  width:min(360px,88vw);
+  height:auto;
+  display:block;
+  filter:drop-shadow(0 8px 18px rgba(100,70,45,.08));
+}
+.mutation-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.8fr);gap:18px;align-items:start}
+.mutation-form{display:flex;flex-direction:column;gap:14px}
+.mutation-specific{display:flex;flex-direction:column;gap:14px}
+.card-title{margin:0 0 14px;color:var(--brand-dark);font-size:18px}
+.hint-text{margin:12px 0 14px;color:var(--muted);font-size:13px;line-height:1.7}
+.inline-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-top:10px}
+.mut-row-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.mut-row{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end;background:#fff;padding:12px;border:1px solid var(--line);border-radius:18px}
+.small-note{color:var(--muted);font-size:12px;line-height:1.65;margin:8px 0 0}
+@media(max-width:860px){
+  .mutation-layout,.inline-fields,.mut-row{grid-template-columns:1fr}
+  .brand-logo-img{width:min(300px,92vw)}
+}

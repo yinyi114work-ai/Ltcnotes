@@ -9,25 +9,10 @@
 <body>
   <header class="hero final-hero">
     <div class="brand-logo-wrap" aria-label="長照研究室 Logo">
-      <svg class="brand-logo-svg" viewBox="0 0 720 260" role="img" aria-label="長照研究室 LONG-TERM CARE LAB">
-        <g fill="none" stroke="#9a8068" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M70 105 L70 185 L180 185 L180 105 L125 58 Z"/>
-          <path d="M105 122 C105 98 137 96 143 121 C151 96 182 99 182 124 C182 154 143 178 143 178 C143 178 105 153 105 122 Z"/>
-          <path d="M180 185 C205 167 215 141 233 113"/>
-          <path d="M222 131 C238 119 253 121 263 130"/>
-          <path d="M211 154 C228 145 245 148 254 160"/>
-          <path d="M198 176 C215 169 229 174 238 185"/>
-        </g>
-        <text x="300" y="104" fill="#8f7764" font-size="54" font-weight="700" letter-spacing="10" font-family="'Noto Sans TC','Microsoft JhengHei',sans-serif">長照研究室</text>
-        <text x="304" y="144" fill="#c59678" font-size="24" font-weight="700" letter-spacing="7" font-family="Arial,sans-serif">LONG-TERM CARE LAB</text>
-        <line x1="304" y1="173" x2="420" y2="173" stroke="#d6bda8" stroke-width="3"/>
-        <text x="438" y="181" fill="#c59678" font-size="22">♥</text>
-        <line x1="472" y1="173" x2="590" y2="173" stroke="#d6bda8" stroke-width="3"/>
-        <text x="330" y="218" fill="#8f7764" font-size="22" letter-spacing="13" font-family="'Noto Sans TC','Microsoft JhengHei',sans-serif">研究×整合×共好</text>
-      </svg>
+      <img class="brand-logo-img" src="logo.png" alt="長照研究室 LONG-TERM CARE LAB Logo" />
     </div>
     <h1>居家督導輔助小工具</h1>
-    <p class="hero-text">額度計算｜碼別查詢｜費用預估｜家訪紀錄生成</p>
+    <p class="hero-text">額度計算｜碼別查詢｜費用預估｜家訪紀錄生成｜異動通報產生</p>
     <p class="source-note">資料基礎：115年度長期照顧服務申請及給付辦法附表。金額採小數點後無條件捨去。</p>
   </header>
 
@@ -36,6 +21,7 @@
     <button class="tab-btn" data-target="codeTool">碼別介紹</button>
     <button class="tab-btn" data-target="feeTool">服務費用預估</button>
     <button class="tab-btn" data-target="visitTool">家訪紀錄生成器</button>
+    <button class="tab-btn" data-target="mutationTool">異動通報產生器</button>
   </nav>
 
   <main class="container">
@@ -198,6 +184,93 @@
         </div>
       </div>
     </section>
+
+
+    <section id="mutationTool" class="tool-section">
+      <div class="section-title">
+        <h2>異動通報產生器 V1</h2>
+        <p>選擇通報類型並填入重點資料，自動產生可貼到照管平台、AA碼或 LINE 群組的文字。</p>
+      </div>
+
+      <div class="mutation-layout">
+        <div class="mutation-form">
+          <details open class="visit-block mutation-settings">
+            <summary>一、單位資訊設定</summary>
+            <p class="hint-text">儲存後會自動帶入每一則通報，資料只會存在目前這台裝置的瀏覽器。</p>
+            <div class="grid-2">
+              <label>單位名稱<input id="mutUnitName" placeholder="例如：新北市私立○○居家長照機構"></label>
+              <label>聯繫人<input id="mutContactName" placeholder="例如：王小明"></label>
+              <label>職稱<input id="mutContactTitle" placeholder="例如：居家服務督導員"></label>
+              <label>聯絡電話<input id="mutContactPhone" placeholder="例如：02-XXXXXXX"></label>
+            </div>
+            <div class="button-row">
+              <button id="saveMutSettings" class="primary-btn" type="button">儲存單位資訊</button>
+            </div>
+          </details>
+
+          <div class="card">
+            <div class="grid-2">
+              <label>通報類型
+                <select id="mutType">
+                  <option value="pause">暫停服務</option>
+                  <option value="end">結束服務</option>
+                  <option value="first">第一次服務進場</option>
+                  <option value="delay">未能於時效內進場服務</option>
+                  <option value="adjust">服務型態調整</option>
+                  <option value="quota">開立額度</option>
+                  <option value="incident">異常事件通報</option>
+                  <option value="missed">服務未遇</option>
+                </select>
+              </label>
+              <label>通知方式
+                <select id="mutMethod">
+                  <option value="來電">電話</option>
+                  <option value="LINE">LINE</option>
+                  <option value="面訪">面訪</option>
+                  <option value="簡訊">簡訊</option>
+                  <option value="其他">其他</option>
+                </select>
+              </label>
+              <label>通報日期<input id="mutDate" type="date"></label>
+              <label>通報時間<input id="mutTime" type="time"></label>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">通知／提出人</h3>
+            <div class="grid-3">
+              <label>通知人類別
+                <select id="mutPersonType">
+                  <option value="個案本人">個案本人</option>
+                  <option value="家屬">家屬</option>
+                  <option value="專業人員">專業人員</option>
+                  <option value="機構／單位">機構／單位</option>
+                  <option value="其他">其他</option>
+                </select>
+              </label>
+              <label id="mutPersonDetailWrap">細項
+                <select id="mutPersonDetail"></select>
+              </label>
+              <label>其他說明<input id="mutPersonOther" placeholder="選其他時填寫，例如：鄰居、里長、醫院出準"></label>
+            </div>
+          </div>
+
+          <div id="mutationSpecificForm" class="mutation-specific"></div>
+
+          <div class="button-row">
+            <button id="generateMutation" class="primary-btn" type="button">生成異動通報</button>
+            <button id="copyMutation" class="secondary-btn" type="button">複製通報內容</button>
+            <button id="clearMutation" class="ghost-btn" type="button">清空本次資料</button>
+          </div>
+        </div>
+
+        <div class="visit-output-wrap">
+          <h3>生成結果</h3>
+          <textarea id="mutationOutput" class="visit-output" placeholder="按下「生成異動通報」後，這裡會產生可複製的通報文字。"></textarea>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <footer class="site-footer">
