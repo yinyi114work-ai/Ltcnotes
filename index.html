@@ -20,8 +20,8 @@
     <section class="tool-grid">
       <a class="tool-card" href="#quotaTool"><span>🧮</span><strong>額度計算器</strong><small>CMS 等級與身分別試算</small></a>
       <a class="tool-card" href="#serviceTool"><span>📖</span><strong>碼別介紹</strong><small>BA／AA／GA09 查詢</small></a>
-      <a class="tool-card disabled" href="#"><span>💰</span><strong>服務費用預估</strong><small>下一階段製作</small></a>
-      <a class="tool-card disabled" href="#"><span>📝</span><strong>家訪紀錄生成器</strong><small>下一階段製作</small></a>
+      <a class="tool-card" href="#feeTool"><span>💰</span><strong>服務費用預估</strong><small>依碼別與次數試算月費</small></a>
+      <a class="tool-card" href="#visitTool"><span>📝</span><strong>家訪紀錄生成器</strong><small>依開立碼別帶入服務計畫</small></a>
     </section>
 
     <section id="quotaTool" class="panel">
@@ -66,6 +66,92 @@
         </select>
       </div>
       <div id="serviceList" class="service-list"></div>
+    </section>
+
+    <section id="feeTool" class="panel">
+      <div class="section-title">
+        <h2>服務費用預估</h2>
+        <p>依個管開立碼別與每月次數，預估個案每月部分負擔。</p>
+      </div>
+      <div class="form-grid">
+        <label>身分別
+          <select id="feeIdentity">
+            <option value="type1">第一類｜0%</option>
+            <option value="type2">第二類｜5%</option>
+            <option value="type3" selected>第三類｜16%</option>
+          </select>
+        </label>
+      </div>
+      <div class="fee-actions">
+        <button type="button" id="addFeeRow">＋新增碼別</button>
+        <button type="button" id="clearFeeRows" class="ghost">清空</button>
+      </div>
+      <div id="feeRows" class="fee-rows"></div>
+      <div class="result-grid">
+        <div class="result main"><span>給付費用合計</span><strong id="feeTotalPrice">—</strong></div>
+        <div class="result"><span>預估部分負擔</span><strong id="feeTotalCopay">—</strong></div>
+        <div class="result"><span>預估補助金額</span><strong id="feeTotalSubsidy">—</strong></div>
+      </div>
+      <div id="feeDetail" class="fee-detail"></div>
+      <p class="note">提醒：本工具以碼別給付價格與部分負擔比例估算，實際費用仍以照顧計畫、核定內容與申報結果為準。</p>
+    </section>
+
+    <section id="visitTool" class="panel">
+      <div class="section-title">
+        <h2>家訪紀錄生成器</h2>
+        <p>輸入個案評估內容，勾選開立碼別後，自動帶入服務目標與服務計畫。</p>
+      </div>
+      <div class="form-grid two">
+        <label>個案身心靈社會狀況
+          <textarea id="caseBio" placeholder="例：個案意識清楚，可簡單表達需求，近期體況穩定，情緒尚平穩…"></textarea>
+        </label>
+        <label>居住環境
+          <textarea id="caseEnv" placeholder="例：居家環境整潔，浴室地面較濕滑，已提醒防滑與動線安全…"></textarea>
+        </label>
+        <label>主要照顧者負荷
+          <textarea id="caregiverLoad" placeholder="例：主要由案女照顧，需兼顧工作與家庭，偶有照顧壓力…"></textarea>
+        </label>
+        <label>其他補充
+          <textarea id="visitOther" placeholder="例：目前服務穩定，暫無新增服務需求…"></textarea>
+        </label>
+      </div>
+
+      <h3 class="mini-title">開立碼別</h3>
+      <div class="search-row">
+        <input id="visitServiceSearch" type="search" placeholder="搜尋要勾選的碼別，例如 BA07、家務、喘息…" />
+        <button type="button" id="clearVisitChecks" class="ghost">清除勾選</button>
+      </div>
+      <div id="visitServiceChecks" class="check-list"></div>
+
+      <h3 class="mini-title">居服員到班查核</h3>
+      <div class="form-grid three">
+        <label>到班情形
+          <select id="attendanceStatus">
+            <option>準時到班</option>
+            <option>偶有遲到，已提醒改善</option>
+            <option>近期到班情形需持續追蹤</option>
+          </select>
+        </label>
+        <label>服務執行情形
+          <select id="executionStatus">
+            <option>均依照顧計畫執行</option>
+            <option>大致依照顧計畫執行，部分內容已提醒調整</option>
+            <option>有未依照顧計畫執行情形，已進行督導與追蹤</option>
+          </select>
+        </label>
+        <label>滿意度
+          <select id="satisfactionStatus">
+            <option>個案及家屬表示滿意</option>
+            <option>個案及家屬表示尚可</option>
+            <option>個案及家屬反映需調整服務內容</option>
+          </select>
+        </label>
+      </div>
+      <div class="fee-actions">
+        <button type="button" id="generateVisit">生成家訪紀錄</button>
+        <button type="button" id="copyVisit" class="ghost">複製文字</button>
+      </div>
+      <textarea id="visitOutput" class="output" placeholder="生成後會出現在這裡，可再自行微調。"></textarea>
     </section>
   </main>
 
