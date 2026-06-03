@@ -1,4 +1,5 @@
 const $ = (id) => document.getElementById(id);
+let lastVisitSections = {};
 
 const visitFieldGroups = {
   physicalFields: [
@@ -158,6 +159,11 @@ function updateFee(){
   $('feeRemain').textContent = money(remain);
 
   const notice = $('feeNotice');
+  const overageCard = $('feeOverage').closest('.result-card');
+  const clientCard = $('feeClientTotal').closest('.result-card');
+  overageCard.classList.toggle('overage-alert', overage > 0);
+  clientCard.classList.toggle('overage-alert', overage > 0);
+
   if(overage > 0){
     notice.className = 'notice-card danger';
     notice.textContent = `⚠️ 已超出 CMS 額度 ${money(overage)} 元，超額部分需全額自費；個案預估支付總額為 ${money(clientTotal)} 元。`;
@@ -241,7 +247,39 @@ function makeVisitRecord(){
   sections.push(`七、異常事件與需求變化\n${incidentText}${needText}${adjust !== '暫無調整需求' ? '服務調整評估：' + adjust + '。' : '目前服務安排暫無調整需求。'}`);
   sections.push(`八、家訪結論及後續建議\n本次家訪評估個案服務使用情形大致穩定，居服員服務執行狀況將持續依照顧計畫追蹤。後續將持續關注個案身心狀況、居住環境安全、主要照顧者負荷及服務需求變化，必要時再與個管或相關單位討論服務調整。${extraNote ? '\n補充紀錄：' + extraNote : ''}`);
 
-  $('visitOutput').value = sections.join('\n\n');
+  lastVisitSections = {
+    full: sections.join('\n\n'),
+    assessment: sections.slice(0,4).join('\n\n'),
+    plan: sections.slice(4,6).join('\n\n'),
+    conclusion: sections.slice(6,8).join('\n\n')
+  };
+  $('visitOutput').value = lastVisitSections.full;
+}
+
+async function copyText(text, label='內容'){
+  if(!text || !text.trim()){
+    makeVisitRecord();
+    text = lastVisitSections.full || $('visitOutput').value;
+  }
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast(`已複製${label}`);
+  }catch(err){
+    $('visitOutput').focus();
+    $('visitOutput').select();
+    document.execCommand('copy');
+    showToast(`已複製${label}`);
+  }
+}
+
+function showToast(message){
+  const oldToast = document.querySelector('.copy-toast');
+  if(oldToast) oldToast.remove();
+  const toast = document.createElement('div');
+  toast.className = 'copy-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(),1800);
 }
 
 function initVisitAccordion(){
@@ -261,15 +299,23 @@ function initVisitTool(){
   initVisitFields();
   initVisitAccordion();
   $('generateVisit').addEventListener('click',makeVisitRecord);
-  $('copyVisit').addEventListener('click',async()=>{
+  $('copyVisit').addEventListener('click',()=>{
     if(!$('visitOutput').value.trim()) makeVisitRecord();
-    await navigator.clipboard.writeText($('visitOutput').value);
-    alert('已複製家訪紀錄');
+    copyText(lastVisitSections.full || $('visitOutput').value, '完整紀錄');
+  });
+  $('copyPlan').addEventListener('click',()=>{
+    if(!$('visitOutput').value.trim()) makeVisitRecord();
+    copyText(lastVisitSections.plan, '服務計畫');
+  });
+  $('copyConclusion').addEventListener('click',()=>{
+    if(!$('visitOutput').value.trim()) makeVisitRecord();
+    copyText(lastVisitSections.conclusion, '家訪結論');
   });
   $('clearVisit').addEventListener('click',()=>{
     document.querySelectorAll('#visitTool textarea').forEach(t=>t.value='');
     document.querySelectorAll('#visitTool input[type="checkbox"]').forEach(c=>c.checked=false);
     $('visitOutput').value='';
+    lastVisitSections = {};
   });
 }
 

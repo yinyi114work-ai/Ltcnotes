@@ -3,19 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>長照研究室｜居督工具箱</title>
+  <title>長照研究室－居家督導輔助小工具</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="hero">
-    <div class="brand-row">
-      <div class="logo-mark">♡</div>
-      <div>
-        <p class="eyebrow">LONG-TERM CARE LAB</p>
-        <h1>長照研究室｜居督工具箱</h1>
-      </div>
+  <header class="hero final-hero">
+    <div class="brand-logo-wrap" aria-label="長照研究室 Logo">
+      <svg class="brand-logo-svg" viewBox="0 0 720 260" role="img" aria-label="長照研究室 LONG-TERM CARE LAB">
+        <g fill="none" stroke="#9a8068" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M70 105 L70 185 L180 185 L180 105 L125 58 Z"/>
+          <path d="M105 122 C105 98 137 96 143 121 C151 96 182 99 182 124 C182 154 143 178 143 178 C143 178 105 153 105 122 Z"/>
+          <path d="M180 185 C205 167 215 141 233 113"/>
+          <path d="M222 131 C238 119 253 121 263 130"/>
+          <path d="M211 154 C228 145 245 148 254 160"/>
+          <path d="M198 176 C215 169 229 174 238 185"/>
+        </g>
+        <text x="300" y="104" fill="#8f7764" font-size="54" font-weight="700" letter-spacing="10" font-family="'Noto Sans TC','Microsoft JhengHei',sans-serif">長照研究室</text>
+        <text x="304" y="144" fill="#c59678" font-size="24" font-weight="700" letter-spacing="7" font-family="Arial,sans-serif">LONG-TERM CARE LAB</text>
+        <line x1="304" y1="173" x2="420" y2="173" stroke="#d6bda8" stroke-width="3"/>
+        <text x="438" y="181" fill="#c59678" font-size="22">♥</text>
+        <line x1="472" y1="173" x2="590" y2="173" stroke="#d6bda8" stroke-width="3"/>
+        <text x="330" y="218" fill="#8f7764" font-size="22" letter-spacing="13" font-family="'Noto Sans TC','Microsoft JhengHei',sans-serif">研究×整合×共好</text>
+      </svg>
     </div>
-    <p class="hero-text">額度、碼別、費用預估與家訪紀錄生成，一頁完成。</p>
+    <h1>居家督導輔助小工具</h1>
+    <p class="hero-text">額度計算｜碼別查詢｜費用預估｜家訪紀錄生成</p>
     <p class="source-note">資料基礎：115年度長期照顧服務申請及給付辦法附表。金額採小數點後無條件捨去。</p>
   </header>
 
@@ -76,9 +88,9 @@
       </div>
       <div id="feeRows" class="fee-rows"></div>
       <div class="result-grid fee-result-grid">
-        <div class="result-card"><span>給付總額</span><strong id="feeTotal">0</strong></div>
-        <div class="result-card"><span>CMS額度</span><strong id="feeQuota">0</strong></div>
-        <div class="result-card"><span>額度內金額</span><strong id="feeWithinQuota">0</strong></div>
+        <div class="result-card"><span>預估使用額度</span><strong id="feeTotal">0</strong></div>
+        <div class="result-card"><span>CMS可用額度</span><strong id="feeQuota">0</strong></div>
+        <div class="result-card"><span>額度內使用金額</span><strong id="feeWithinQuota">0</strong></div>
         <div class="result-card"><span>部分負擔</span><strong id="feeSelfPay">0</strong></div>
         <div class="result-card"><span>補助金額</span><strong id="feeSubsidy">0</strong></div>
         <div class="result-card"><span>超額自費</span><strong id="feeOverage">0</strong></div>
@@ -110,7 +122,7 @@
             </div>
           </details>
 
-          <details open class="visit-block">
+          <details class="visit-block">
             <summary>二、身體與健康狀況</summary>
             <div class="grid-3" id="physicalFields"></div>
             <label>疼痛部位／健康補充
@@ -159,7 +171,7 @@
             <div class="checkbox-grid" id="needChecks"></div>
           </details>
 
-          <details open class="visit-block">
+          <details class="visit-block">
             <summary>十、開立碼別</summary>
             <div id="visitServiceChecks" class="checkbox-grid code-checks"></div>
           </details>
@@ -173,7 +185,9 @@
 
           <div class="button-row">
             <button id="generateVisit" class="primary-btn">生成家訪紀錄</button>
-            <button id="copyVisit" class="secondary-btn">複製紀錄</button>
+            <button id="copyVisit" class="secondary-btn">複製完整紀錄</button>
+            <button id="copyPlan" class="secondary-btn">複製服務計畫</button>
+            <button id="copyConclusion" class="secondary-btn">複製家訪結論</button>
             <button id="clearVisit" class="ghost-btn">清空</button>
           </div>
         </div>
@@ -186,7 +200,10 @@
     </section>
   </main>
 
-  <footer>長照研究室 LONG-TERM CARE LAB｜居督工具箱</footer>
+  <footer class="site-footer">
+    <div>© 長照研究室 LONG-TERM CARE LAB</div>
+    <small>※ 本工具部分內容由 AI 生成，請依實際個案狀況、相關法規及專業判斷審慎使用。</small>
+  </footer>
 
   <script src="serviceData.js"></script>
   <script src="script.js"></script>
