@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LTC Notes｜居督工具箱</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="brand-mark">♡</div>
+    <div>
+      <p class="eyebrow">LONG-TERM CARE LAB</p>
+      <h1>居督工具箱</h1>
+      <p class="subtitle">額度計算、碼別介紹、費用試算與家訪紀錄生成</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="tool-grid">
+      <a class="tool-card" href="#quotaTool"><span>🧮</span><strong>額度計算器</strong><small>CMS 等級與身分別試算</small></a>
+      <a class="tool-card" href="#serviceTool"><span>📖</span><strong>碼別介紹</strong><small>BA／AA／GA09 查詢</small></a>
+      <a class="tool-card disabled" href="#"><span>💰</span><strong>服務費用預估</strong><small>下一階段製作</small></a>
+      <a class="tool-card disabled" href="#"><span>📝</span><strong>家訪紀錄生成器</strong><small>下一階段製作</small></a>
+    </section>
+
+    <section id="quotaTool" class="panel">
+      <div class="section-title">
+        <h2>額度計算器</h2>
+        <p>依 CMS 等級與身分別，計算給付額度、部分負擔與補助金額。</p>
+      </div>
+      <div class="form-grid">
+        <label>CMS 等級
+          <select id="cmsSelect">
+            <option value="2">CMS 2</option><option value="3">CMS 3</option><option value="4">CMS 4</option><option value="5">CMS 5</option><option value="6">CMS 6</option><option value="7">CMS 7</option><option value="8">CMS 8</option>
+          </select>
+        </label>
+        <label>身分別
+          <select id="identitySelect">
+            <option value="type1">第一類｜0%</option>
+            <option value="type2">第二類｜5%</option>
+            <option value="type3" selected>第三類｜16%</option>
+          </select>
+        </label>
+      </div>
+      <div class="result-grid">
+        <div class="result main"><span>給付額度</span><strong id="quotaAmount">—</strong></div>
+        <div class="result"><span>部分負擔</span><strong id="copayAmount">—</strong></div>
+        <div class="result"><span>補助金額</span><strong id="subsidyAmount">—</strong></div>
+      </div>
+      <p class="note">計算方式：部分負擔＝給付額度 × 比率，採小數點後無條件捨去。</p>
+    </section>
+
+    <section id="serviceTool" class="panel">
+      <div class="section-title">
+        <h2>各碼別介紹</h2>
+        <p>可搜尋碼別、服務名稱或關鍵字，金額自動顯示第二類與第三類自負額。</p>
+      </div>
+      <div class="search-row">
+        <input id="serviceSearch" type="search" placeholder="輸入 BA07、沐浴、家務、喘息…" />
+        <select id="categoryFilter">
+          <option value="all">全部</option>
+          <option value="BA 居家服務">BA 居家服務</option>
+          <option value="AA 加計">AA 加計</option>
+          <option value="GA 喘息">GA 喘息</option>
+        </select>
+      </div>
+      <div id="serviceList" class="service-list"></div>
+    </section>
+  </main>
+
+  <footer>資料依 115 年度長照給付辦法附表整理，實際核定仍以地方政府及照管系統為準。</footer>
+  <script src="serviceData.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
