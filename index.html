@@ -86,8 +86,8 @@
 
     <section id="visitTool" class="tool-section">
       <div class="section-title">
-        <h2>家訪紀錄生成器 V3</h2>
-        <p>用選單快速完成身、心、靈、社會評估，並依開立碼別自動帶入服務目標與服務計畫。</p>
+        <h2>家訪紀錄生成器</h2>
+        <p>用較精簡的選單完成個案狀況、居住環境、照顧者與服務使用追蹤，並依開立碼別自動帶入服務目標與服務計畫。</p>
       </div>
 
       <div class="visit-layout">
@@ -107,48 +107,31 @@
           </details>
 
           <details class="visit-block">
-            <summary>二、身體與健康狀況</summary>
+            <summary>二、個案狀況評估</summary>
             <div class="grid-3" id="physicalFields"></div>
-            <label>疼痛部位／健康補充
-              <textarea id="healthNote" placeholder="例如：膝蓋偶有疼痛、近期血糖偏高、夜眠品質較差..."></textarea>
+            <label>個案狀況補充
+              <textarea id="healthNote" placeholder="例如：近期體況穩定、睡眠品質較差、用藥由家屬協助管理、回診狀況穩定..."></textarea>
             </label>
           </details>
 
           <details class="visit-block">
-            <summary>三、心理狀況</summary>
-            <div class="grid-3" id="psychFields"></div>
-          </details>
-
-          <details class="visit-block">
-            <summary>四、靈性狀況</summary>
-            <div class="grid-3" id="spiritualFields"></div>
-          </details>
-
-          <details class="visit-block">
-            <summary>五、社會支持</summary>
-            <div class="grid-3" id="socialFields"></div>
-          </details>
-
-          <details class="visit-block">
-            <summary>六、居住環境</summary>
+            <summary>三、居住環境與主要照顧者</summary>
+            <h4>居住環境</h4>
             <div class="checkbox-grid" id="environmentChecks"></div>
             <label>環境補充
               <textarea id="environmentNote" placeholder="例如：浴室地面濕滑，已提醒家屬加強防滑措施..."></textarea>
             </label>
-          </details>
-
-          <details class="visit-block">
-            <summary>七、主要照顧者</summary>
+            <h4>主要照顧者</h4>
             <div class="grid-3" id="caregiverFields"></div>
           </details>
 
           <details class="visit-block">
-            <summary>八、服務使用與滿意度</summary>
+            <summary>四、服務使用與滿意度</summary>
             <div class="grid-3" id="serviceUseFields"></div>
           </details>
 
           <details class="visit-block">
-            <summary>九、異常事件與需求變化</summary>
+            <summary>五、異常事件與需求變化</summary>
             <h4>近期異常事件</h4>
             <div class="checkbox-grid" id="incidentChecks"></div>
             <h4>需求變化</h4>
@@ -156,12 +139,12 @@
           </details>
 
           <details class="visit-block">
-            <summary>十、開立碼別</summary>
+            <summary>六、開立碼別</summary>
             <div id="visitServiceChecks" class="checkbox-grid code-checks"></div>
           </details>
 
           <details class="visit-block">
-            <summary>十一、補充紀錄</summary>
+            <summary>七、補充紀錄</summary>
             <label>其他補充
               <textarea id="extraNote" placeholder="特殊家屬反映、居服員回饋、後續需追蹤事項..."></textarea>
             </label>
@@ -234,7 +217,7 @@
             </div>
           </div>
 
-          <div class="card mutation-person-card">
+          <div class="card" id="mutPersonCard">
             <h3 class="card-title">通知／提出人</h3>
             <div class="grid-3">
               <label>通知人類別
@@ -273,7 +256,8 @@
 
   <footer class="site-footer">
     <div>© 長照研究室 LONG-TERM CARE LAB</div>
-    <small>※ 本工具部分內容由 AI 生成，請依實際個案狀況、相關法規及專業判斷審慎使用。</small>
+    <small>※ 本工具部分內容由 AI 協助生成，請依實際個案狀況、相關法規及專業判斷審慎使用。</small>
+    <small>※「居督碎碎唸」為本人實務工作經驗分享，內容可能因各縣市執行方式、主管機關解釋或服務單位規範而有所差異。如有疑義，請以中央及各地方政府最新規定為準。</small>
   </footer>
 
   <script src="serviceData.js"></script>
