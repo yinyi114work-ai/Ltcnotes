@@ -153,5 +153,25 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
 .small-note{color:var(--muted);font-size:12px;line-height:1.65;margin:8px 0 0}
 @media(max-width:860px){
   .mutation-layout,.inline-fields,.mut-row{grid-template-columns:1fr}
-  .brand-logo-img{width:min(420px,92vw)}
+  .brand-logo-img{
+  width:min(500px,92vw);
+  height:auto;
+  display:block;
+  filter:drop-shadow(0 8px 18px rgba(100,70,45,.08));
 }
+}
+
+
+/* Supervisor practical tips */
+.supervisor-tip{
+  margin:12px 0;
+  padding:12px 14px;
+  border-radius:16px;
+  background:#fff3df;
+  border:1px dashed #d9b78e;
+  color:#6f5744;
+  line-height:1.75;
+}
+.supervisor-tip strong{display:block;color:#8f6748;margin-bottom:4px}
+.supervisor-tip span{display:block}
+.site-footer small + small{margin-top:6px}

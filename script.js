@@ -15,21 +15,10 @@ const visitFieldGroups = {
     ['睡眠狀況',['睡眠良好','偶有失眠','夜間頻繁醒來','日夜顛倒','需安眠藥協助']],
     ['用藥管理',['可自行管理','家屬協助管理','居服員提醒服藥','常忘記服藥','需持續追蹤']],
     ['就醫狀況',['定期回診','近期住院','近期急診','近期病況變化','就醫交通需協助']],
-    ['疼痛狀況',['無明顯疼痛','偶有疼痛','長期疼痛','疼痛需追蹤']]
-  ],
-  psychFields: [
+    ['疼痛狀況',['無明顯疼痛','偶有疼痛','長期疼痛','疼痛需追蹤']],
     ['情緒狀況',['穩定','偶有焦慮','偶有憂鬱','易怒','情緒起伏大']],
-    ['服務接受度',['願意接受服務','偶有拒絕','經常拒絕','需持續建立關係']],
-    ['認知狀況',['意識清楚','記憶力下降','失智症','難以表達需求']]
-  ],
-  spiritualFields: [
-    ['生活滿意度',['滿意目前生活','尚可','不滿意','未明確表達']],
-    ['信仰支持',['有固定信仰','偶爾參與宗教活動','無特殊信仰','未提及']],
-    ['生活目標感',['對生活有期待','尚可','較缺乏動力','需持續關注']]
-  ],
-  socialFields: [
+    ['認知狀況',['意識清楚','記憶力下降','失智症','難以表達需求']],
     ['家庭支持',['家屬支持良好','家屬支持尚可','家屬支持有限','缺乏家庭支持']],
-    ['社區參與',['有參與據點','有參與活動','少有外出','幾乎無社會參與']],
     ['經濟狀況',['穩定','尚可','有經濟壓力','未明確表示']]
   ],
   caregiverFields: [
@@ -58,13 +47,15 @@ function initTabs(){
       document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
       document.querySelectorAll('.tool-section').forEach(s=>s.classList.remove('active'));
       btn.classList.add('active');
-      $(btn.dataset.target).classList.add('active');
+      const target = $(btn.dataset.target);
+      if(target) target.classList.add('active');
     });
   });
 }
 
 function initQuota(){
   const cms = $('cmsSelect');
+  if(!cms) return;
   cms.innerHTML = Object.entries(cmsLevels).map(([level,amount])=>`<option value="${level}">CMS ${level}｜${money(amount)}元</option>`).join('');
   const identities = Object.entries(identityRates).map(([key,obj])=>`<option value="${key}">${obj.label}</option>`).join('');
   $('identitySelect').innerHTML = identities;
@@ -89,8 +80,9 @@ function serviceOptionHtml(){
 }
 
 function renderServices(filter=''){
+  if(!$('serviceList')) return;
   const q = filter.trim().toLowerCase();
-  const list = serviceData.filter(s=>[s.code,s.name,s.category,s.desc,s.note].join(' ').toLowerCase().includes(q));
+  const list = serviceData.filter(s=>[s.code,s.name,s.category,s.desc,s.note,s.tip || ''].join(' ').toLowerCase().includes(q));
   $('serviceList').innerHTML = list.map(s=>`
     <article class="service-card">
       <h3>${s.code}｜${s.name}</h3>
@@ -102,6 +94,7 @@ function renderServices(filter=''){
       </div>
       <p><strong>支付基準摘要：</strong>${s.desc}</p>
       <p><strong>注意事項：</strong>${s.note}</p>
+      ${s.tip ? `<div class="supervisor-tip"><strong>☕ 居督碎碎唸：</strong><span>${s.tip}</span></div>` : ''}
       <p><strong>服務計畫：</strong>${s.plan}</p>
     </article>
   `).join('') || '<p class="card">查無符合的碼別。</p>';
@@ -109,7 +102,8 @@ function renderServices(filter=''){
 
 function initCodeTool(){
   renderServices();
-  $('serviceSearch').addEventListener('input', e=>renderServices(e.target.value));
+  const search = $('serviceSearch');
+  if(search) search.addEventListener('input', e=>renderServices(e.target.value));
 }
 
 function addFeeRow(code='BA07', count=1){
@@ -132,20 +126,16 @@ function updateFee(){
   const rate = identityRates[$('feeIdentity').value].rate;
   const quota = cmsLevels[$('feeCms').value] || 0;
   let total = 0;
-
   document.querySelectorAll('.fee-row').forEach(row=>{
     const code = row.querySelector('.fee-code').value;
     const count = Number(row.querySelector('.fee-count').value || 0);
     const service = serviceData.find(s=>s.code===code);
-    if(service){
-      total += service.price * count;
-    }
+    if(service) total += service.price * count;
   });
 
   const withinQuota = Math.min(total, quota);
   const overage = Math.max(total - quota, 0);
   const selfPay = Math.floor(withinQuota * rate);
-  const subsidy = withinQuota - selfPay;
   const clientTotal = selfPay + overage;
   const remain = Math.max(quota - total, 0);
 
@@ -157,11 +147,8 @@ function updateFee(){
   $('feeRemain').textContent = money(remain);
 
   const notice = $('feeNotice');
-  const overageCard = $('feeOverage').closest('.result-card');
-  const clientCard = $('feeClientTotal').closest('.result-card');
-  overageCard.classList.toggle('overage-alert', overage > 0);
-  clientCard.classList.toggle('overage-alert', overage > 0);
-
+  $('feeOverage').closest('.result-card').classList.toggle('overage-alert', overage > 0);
+  $('feeClientTotal').closest('.result-card').classList.toggle('overage-alert', overage > 0);
   if(overage > 0){
     notice.className = 'notice-card danger';
     notice.textContent = `⚠️ 已超出 CMS 額度 ${money(overage)} 元，超額部分需全額自費；預估自付總額為 ${money(clientTotal)} 元。`;
@@ -172,6 +159,7 @@ function updateFee(){
 }
 
 function initFeeTool(){
+  if(!$('addFeeRow')) return;
   $('addFeeRow').addEventListener('click',()=>addFeeRow());
   $('feeIdentity').addEventListener('change',updateFee);
   $('feeCms').addEventListener('change',updateFee);
@@ -181,10 +169,13 @@ function initFeeTool(){
 function makeSelect(label, options, id){
   return `<label>${label}<select id="${id}">${options.map(o=>`<option>${o}</option>`).join('')}</select></label>`;
 }
-
+function checkHtml(label,id,value=''){
+  return `<label class="check-item"><input type="checkbox" id="${id}" value="${value || label}"><span>${label}</span></label>`;
+}
 function initVisitFields(){
   Object.entries(visitFieldGroups).forEach(([container,fields])=>{
-    $(container).innerHTML = fields.map(([label,options],idx)=>makeSelect(label,options,`${container}_${idx}`)).join('');
+    const el = $(container);
+    if(el) el.innerHTML = fields.map(([label,options],idx)=>makeSelect(label,options,`${container}_${idx}`)).join('');
   });
   $('environmentChecks').innerHTML = environmentOptions.map((x,i)=>checkHtml(x,`env_${i}`)).join('');
   $('incidentChecks').innerHTML = incidentOptions.map((x,i)=>checkHtml(x,`inc_${i}`)).join('');
@@ -192,26 +183,22 @@ function initVisitFields(){
   $('visitServiceChecks').innerHTML = serviceData.map(s=>checkHtml(`${s.code} ${s.name}`,`svc_${s.code}`,s.code)).join('');
   ['BA01','BA07','BA15'].forEach(code=>{ const el = $(`svc_${code}`); if(el) el.checked = true; });
 }
-
-function checkHtml(label,id,value=''){
-  return `<label class="check-item"><input type="checkbox" id="${id}" value="${value || label}"><span>${label}</span></label>`;
-}
-
 function selectedChecks(containerId){
-  return Array.from($(containerId).querySelectorAll('input:checked')).map(i=>i.value || i.nextElementSibling.textContent.trim());
+  const el = $(containerId);
+  return el ? Array.from(el.querySelectorAll('input:checked')).map(i=>i.value || i.nextElementSibling.textContent.trim()) : [];
 }
-
 function getFieldTexts(containerId){
-  return Array.from($(containerId).querySelectorAll('label')).map(label=>{
+  const el = $(containerId);
+  if(!el) return [];
+  return Array.from(el.querySelectorAll('label')).map(label=>{
     const name = label.childNodes[0].textContent.trim();
     const value = label.querySelector('select').value;
     return {name,value};
   });
 }
-
 function sentenceFromFields(containerId){
   const fields = getFieldTexts(containerId);
-  return fields.map(f=>`${f.name}為${f.value}`).join('，') + '。';
+  return fields.length ? fields.map(f=>`${f.name}為${f.value}`).join('，') + '。' : '';
 }
 
 function makeVisitRecord(){
@@ -234,22 +221,30 @@ function makeVisitRecord(){
   const adjust = $('needAdjust').value;
 
   const sections = [];
-  sections.push(`一、個案身心靈社會狀況\n本次家訪重點為${purpose}。個案身體及健康功能評估如下：${sentenceFromFields('physicalFields')}${healthNote ? '補充說明：' + healthNote + '。' : ''}\n心理狀況：${sentenceFromFields('psychFields')}靈性狀況：${sentenceFromFields('spiritualFields')}社會支持：${sentenceFromFields('socialFields')}`);
-  sections.push(`二、居住環境評估\n本次訪視評估居住環境：${env.length ? env.join('、') : '未勾選環境項目'}。${environmentNote ? '補充說明：' + environmentNote + '。' : '後續持續留意居家動線及照顧安全。'}`);
-  sections.push(`三、主要照顧者評估\n${sentenceFromFields('caregiverFields')}後續持續關注主要照顧者負荷及照顧資源使用情形。`);
-  sections.push(`四、服務使用及執行情形\n個案目前使用服務包含：${serviceNames}。${sentenceFromFields('serviceUseFields')}\n${followups.join('')}`);
-  sections.push(`五、居家服務目標\n${goals.length ? goals.map((g,i)=>`${i+1}. ${g}`).join('\n') : '目前未勾選服務碼別，故未自動產生服務目標。'}`);
-  sections.push(`六、服務計畫\n${plans.length ? plans.map((p,i)=>`${i+1}. ${p}`).join('\n') : '目前未勾選服務碼別，故未自動產生服務計畫。'}`);
+  sections.push(`一、個案狀況評估
+本次家訪重點為${purpose}。個案狀況評估如下：${sentenceFromFields('physicalFields')}${healthNote ? '補充說明：' + healthNote + '。' : ''}`);
+  sections.push(`二、居住環境與主要照顧者評估
+本次訪視評估居住環境：${env.length ? env.join('、') : '未勾選環境項目'}。${environmentNote ? '補充說明：' + environmentNote + '。' : '後續持續留意居家動線及照顧安全。'}
+主要照顧者評估：${sentenceFromFields('caregiverFields')}後續持續關注照顧者負荷及照顧資源使用情形。`);
+  sections.push(`三、服務使用及執行情形
+個案目前使用服務包含：${serviceNames}。${sentenceFromFields('serviceUseFields')}
+${followups.join('')}`);
+  sections.push(`四、居家服務目標
+${goals.length ? goals.map((g,i)=>`${i+1}. ${g}`).join('\n') : '目前未勾選服務碼別，故未自動產生服務目標。'}`);
+  sections.push(`五、服務計畫
+${plans.length ? plans.map((p,i)=>`${i+1}. ${p}`).join('\n') : '目前未勾選服務碼別，故未自動產生服務計畫。'}`);
   const incidentText = inc.includes('無特殊異常事件') ? '近期無特殊異常事件。' : (inc.length ? `近期需追蹤異常事件包含：${inc.join('、')}。` : '未勾選異常事件。');
   const needText = needs.includes('暫無新增需求') ? '目前暫無新增需求。' : (needs.length ? `目前需求變化包含：${needs.join('、')}。` : '未勾選需求變化。');
-  sections.push(`七、異常事件與需求變化\n${incidentText}${needText}${adjust !== '暫無調整需求' ? '服務調整評估：' + adjust + '。' : '目前服務安排暫無調整需求。'}`);
-  sections.push(`八、家訪結論及後續建議\n本次家訪評估個案服務使用情形大致穩定，居服員服務執行狀況將持續依照顧計畫追蹤。後續將持續關注個案身心狀況、居住環境安全、主要照顧者負荷及服務需求變化，必要時再與個管或相關單位討論服務調整。${extraNote ? '\n補充紀錄：' + extraNote : ''}`);
+  sections.push(`六、異常事件與需求變化
+${incidentText}${needText}${adjust !== '暫無調整需求' ? '服務調整評估：' + adjust + '。' : '目前服務安排暫無調整需求。'}`);
+  sections.push(`七、家訪結論及後續建議
+本次家訪評估個案服務使用情形大致穩定，居服員服務執行狀況將持續依照顧計畫追蹤。後續將持續關注個案身心狀況、居住環境安全、主要照顧者負荷及服務需求變化，必要時再與相關單位討論服務調整。${extraNote ? '\n補充紀錄：' + extraNote : ''}`);
 
   lastVisitSections = {
     full: sections.join('\n\n'),
-    assessment: sections.slice(0,4).join('\n\n'),
-    plan: sections.slice(4,6).join('\n\n'),
-    conclusion: sections.slice(6,8).join('\n\n')
+    assessment: sections.slice(0,3).join('\n\n'),
+    plan: sections.slice(3,5).join('\n\n'),
+    conclusion: sections.slice(5,7).join('\n\n')
   };
   $('visitOutput').value = lastVisitSections.full;
 }
@@ -263,13 +258,11 @@ async function copyText(text, label='內容'){
     await navigator.clipboard.writeText(text);
     showToast(`已複製${label}`);
   }catch(err){
-    $('visitOutput').focus();
-    $('visitOutput').select();
-    document.execCommand('copy');
+    const output = $('visitOutput') || $('mutationOutput');
+    if(output){ output.focus(); output.select(); document.execCommand('copy'); }
     showToast(`已複製${label}`);
   }
 }
-
 function showToast(message){
   const oldToast = document.querySelector('.copy-toast');
   if(oldToast) oldToast.remove();
@@ -279,36 +272,22 @@ function showToast(message){
   document.body.appendChild(toast);
   setTimeout(()=>toast.remove(),1800);
 }
-
 function initVisitAccordion(){
   const blocks = Array.from(document.querySelectorAll('#visitTool .visit-block'));
   blocks.forEach(block=>{
     block.addEventListener('toggle',()=>{
-      if(block.open){
-        blocks.forEach(other=>{
-          if(other !== block) other.open = false;
-        });
-      }
+      if(block.open) blocks.forEach(other=>{ if(other !== block) other.open = false; });
     });
   });
 }
-
 function initVisitTool(){
+  if(!$('visitTool')) return;
   initVisitFields();
   initVisitAccordion();
   $('generateVisit').addEventListener('click',makeVisitRecord);
-  $('copyVisit').addEventListener('click',()=>{
-    if(!$('visitOutput').value.trim()) makeVisitRecord();
-    copyText(lastVisitSections.full || $('visitOutput').value, '完整紀錄');
-  });
-  $('copyPlan').addEventListener('click',()=>{
-    if(!$('visitOutput').value.trim()) makeVisitRecord();
-    copyText(lastVisitSections.plan, '服務計畫');
-  });
-  $('copyConclusion').addEventListener('click',()=>{
-    if(!$('visitOutput').value.trim()) makeVisitRecord();
-    copyText(lastVisitSections.conclusion, '家訪結論');
-  });
+  $('copyVisit').addEventListener('click',()=>{ if(!$('visitOutput').value.trim()) makeVisitRecord(); copyText(lastVisitSections.full || $('visitOutput').value, '完整紀錄'); });
+  $('copyPlan').addEventListener('click',()=>{ if(!$('visitOutput').value.trim()) makeVisitRecord(); copyText(lastVisitSections.plan, '服務計畫'); });
+  $('copyConclusion').addEventListener('click',()=>{ if(!$('visitOutput').value.trim()) makeVisitRecord(); copyText(lastVisitSections.conclusion, '家訪結論'); });
   $('clearVisit').addEventListener('click',()=>{
     document.querySelectorAll('#visitTool textarea').forEach(t=>t.value='');
     document.querySelectorAll('#visitTool input[type="checkbox"]').forEach(c=>c.checked=false);
@@ -317,15 +296,7 @@ function initVisitTool(){
   });
 }
 
-window.addEventListener('DOMContentLoaded',()=>{
-  initTabs();
-  initQuota();
-  initCodeTool();
-  initFeeTool();
-  initVisitTool();
-});
-
-// ===== 異動通報產生器 V1 =====
+// ===== 異動通報產生器 =====
 const mutPersonOptions = {
   '個案本人': ['個案本人'],
   '家屬': ['案配偶','案子','案女','案媳','案婿','案孫','案兄弟姊妹','主要照顧者','其他'],
@@ -333,69 +304,32 @@ const mutPersonOptions = {
   '機構／單位': ['醫院','護理之家','日照中心','居服單位','個管單位','社福單位','其他'],
   '其他': ['其他']
 };
-
-function todayStr(){
-  const d = new Date();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${d.getFullYear()}-${m}-${day}`;
-}
-function nowTimeStr(){
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-function rocDate(dateStr){
-  if(!dateStr) return '○年○月○日';
-  const [y,m,d] = dateStr.split('-').map(Number);
-  if(!y || !m || !d) return dateStr;
-  return `${y-1911}年${m}月${d}日`;
-}
-function timeText(timeStr){
-  if(!timeStr) return '';
-  const [h,m] = timeStr.split(':');
-  return `${Number(h)}時${m}分`;
-}
+function todayStr(){ const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function nowTimeStr(){ const d = new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function rocDate(dateStr){ if(!dateStr) return '○年○月○日'; const [y,m,d] = dateStr.split('-').map(Number); return y&&m&&d ? `${y-1911}年${m}月${d}日` : dateStr; }
+function timeText(timeStr){ if(!timeStr) return ''; const [h,m] = timeStr.split(':'); return `${Number(h)}時${m}分`; }
 function v(id){ return ($(id)?.value || '').trim(); }
 function checkedValues(name){ return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(x=>x.value); }
-function checkboxList(name, items){
-  return `<div class="checkbox-grid">${items.map((x,i)=>`<label class="check-item"><input type="checkbox" name="${name}" value="${x}" ${i===0?'checked':''}><span>${x}</span></label>`).join('')}</div>`;
-}
+function checkboxList(name, items){ return `<div class="checkbox-grid">${items.map((x,i)=>`<label class="check-item"><input type="checkbox" name="${name}" value="${x}" ${i===0?'checked':''}><span>${x}</span></label>`).join('')}</div>`; }
 function optionList(items){ return items.map(x=>`<option>${x}</option>`).join(''); }
-function commonNoticePrefix(){
-  const dt = `${rocDate(v('mutDate'))}${timeText(v('mutTime'))}`;
-  const person = getMutPersonText();
-  const method = v('mutMethod');
-  const methodText = method === '來電' ? '來電' : method;
-  return `於${dt}接獲${person}${methodText}通知`;
-}
+function commonNoticePrefix(){ return `於${rocDate(v('mutDate'))}${timeText(v('mutTime'))}接獲${getMutPersonText()}${v('mutMethod') === '來電' ? '來電' : v('mutMethod')}通知`; }
 function getMutPersonText(){
-  const type = v('mutPersonType');
-  const detail = v('mutPersonDetail');
-  const other = v('mutPersonOther');
+  const type = v('mutPersonType'), detail = v('mutPersonDetail'), other = v('mutPersonOther');
   if(type === '個案本人') return '個案本人';
   if(detail === '其他' || type === '其他') return other || '其他人員';
   return detail || type;
 }
 function unitSignature(){
-  const unit = v('mutUnitName');
-  const name = v('mutContactName');
-  const title = v('mutContactTitle');
-  const phone = v('mutContactPhone');
+  const unit = v('mutUnitName'), name = v('mutContactName'), title = v('mutContactTitle'), phone = v('mutContactPhone');
   const lines = [];
   if(unit) lines.push(unit);
   if(name || title) lines.push(`聯繫人：${name}${name && title ? ' ' : ''}${title}`.trim());
   if(phone) lines.push(`電話：${phone}`);
   return lines.length ? `\n${lines.join('\n')}` : '';
 }
-function updateMutPersonDetail(){
-  const type = v('mutPersonType') || '個案本人';
-  $('mutPersonDetail').innerHTML = optionList(mutPersonOptions[type] || ['其他']);
-}
+function updateMutPersonDetail(){ const type = v('mutPersonType') || '個案本人'; $('mutPersonDetail').innerHTML = optionList(mutPersonOptions[type] || ['其他']); }
 function saveMutSettings(){
-  const data = {
-    unit: v('mutUnitName'), name: v('mutContactName'), title: v('mutContactTitle'), phone: v('mutContactPhone')
-  };
-  localStorage.setItem('ltcLabMutationSettings', JSON.stringify(data));
+  localStorage.setItem('ltcLabMutationSettings', JSON.stringify({unit:v('mutUnitName'), name:v('mutContactName'), title:v('mutContactTitle'), phone:v('mutContactPhone')}));
   showToast('已儲存單位資訊');
 }
 function loadMutSettings(){
@@ -414,6 +348,7 @@ function renderMutationSpecific(){
   const personCard = $('mutPersonCard');
   if(personCard) personCard.style.display = type === 'quota' ? 'none' : '';
   if(!form) return;
+
   const reasonPause = ['住院','外宿','出國','家屬自行照顧','個案拒絕服務','人力媒合中','個案死亡','其他'];
   const reasonEnd = ['個案死亡','入住機構','轉換服務單位','搬遷外縣市','不符合資格','拒絕服務','其他'];
   const reasonDelay = ['家屬時間無法配合','個案住院','個案失聯','服務區域無人力','指定居服員','持續媒合中','其他'];
@@ -426,10 +361,12 @@ function renderMutationSpecific(){
 
   const html = {
     pause: `<div class="card"><h3 class="card-title">暫停服務</h3><div class="grid-2">
+      <label>暫停類型<select id="mutPauseKind"><option value="single">單次服務暫停</option><option value="period">期間暫停服務</option></select></label>
       <label>暫停原因<select id="mutPauseReason">${optionList(reasonPause)}</select></label>
-      <label>暫停起始日<input id="mutPauseStart" type="date"></label>
-      <label>預計恢復日（可不填）<input id="mutPauseEnd" type="date"></label>
-      <label>補充說明<input id="mutPauseNote" placeholder="例如：住院治療、家屬暫自行照顧"></label>
+      <label class="pause-single-field">暫停日期<input id="mutPauseDate" type="date"></label>
+      <label class="pause-period-field">暫停起始日<input id="mutPauseStart" type="date"></label>
+      <label class="pause-period-field">預計恢復日（可不填）<input id="mutPauseEnd" type="date"></label>
+      <label>補充說明<input id="mutPauseNote" placeholder="例如：當日回診、住院治療、家屬暫自行照顧"></label>
     </div></div>`,
     end: `<div class="card"><h3 class="card-title">結束服務</h3><div class="grid-2">
       <label>結束原因<select id="mutEndReason">${optionList(reasonEnd)}</select></label>
@@ -488,16 +425,23 @@ function renderMutationSpecific(){
   }[type] || '';
   form.innerHTML = html;
 
+  if(type === 'pause'){
+    const pauseKind = $('mutPauseKind');
+    const updatePauseFields = ()=>{
+      const isSingle = pauseKind.value === 'single';
+      document.querySelectorAll('.pause-single-field').forEach(el=>el.style.display = isSingle ? '' : 'none');
+      document.querySelectorAll('.pause-period-field').forEach(el=>el.style.display = isSingle ? 'none' : '');
+    };
+    pauseKind.addEventListener('change', updatePauseFields);
+    updatePauseFields();
+  }
   if(type === 'quota'){
     $('addMutQuotaRow').addEventListener('click',()=>addMutQuotaRow());
     addMutQuotaRow('BA07', 1);
   }
   if(type === 'incident'){
     const during = $('mutIncidentDuring');
-    const updateIncidentTypes = ()=>{
-      const items = during.value === '是' ? incidentSvc : incidentAny;
-      $('mutIncidentType').innerHTML = optionList(items);
-    };
+    const updateIncidentTypes = ()=>{ $('mutIncidentType').innerHTML = optionList(during.value === '是' ? incidentSvc : incidentAny); };
     during.addEventListener('change', updateIncidentTypes);
     updateIncidentTypes();
   }
@@ -530,19 +474,18 @@ function updateMutQuotaCalc(){
   $('mutQuotaCalc').textContent = `總使用單位：${money(totalUnits)}；預估使用金額：${money(totalAmount)}元。`;
 }
 
-function monthROC(monthStr){
-  if(!monthStr) return '本月';
-  const [y,m] = monthStr.split('-').map(Number);
-  return `${y-1911}年${m}月`;
-}
 function generateMutation(){
   const type = v('mutType');
   const prefix = commonNoticePrefix();
   let text = '';
   if(type === 'pause'){
-    const end = v('mutPauseEnd') ? `，預計暫停至${rocDate(v('mutPauseEnd'))}` : '';
     const note = v('mutPauseNote') ? `，${v('mutPauseNote')}` : '';
-    text = `${prefix}，因${v('mutPauseReason')}${note}，故自${rocDate(v('mutPauseStart'))}起暫停服務${end}，以上通報。`;
+    if(v('mutPauseKind') === 'single'){
+      text = `${prefix}，因${v('mutPauseReason')}${note}，故${rocDate(v('mutPauseDate'))}單次服務暫停，以上通報。`;
+    }else{
+      const end = v('mutPauseEnd') ? `，預計暫停至${rocDate(v('mutPauseEnd'))}` : '';
+      text = `${prefix}，因${v('mutPauseReason')}${note}，故自${rocDate(v('mutPauseStart'))}起暫停服務${end}，以上通報。`;
+    }
   }else if(type === 'end'){
     const record = v('mutEndRecord') === '尚未完成登打' ? `目前服務紀錄尚未完成登打，預計於${rocDate(v('mutEndRecordDate'))}前完成` : (v('mutEndRecord') === '無服務紀錄需登打' ? '本案無服務紀錄需登打' : '目前服務紀錄已完成登打');
     const help = checkedValues('mutEndHelp');
@@ -560,9 +503,7 @@ function generateMutation(){
     const rows = getMutQuotaRows();
     const totalUnits = rows.reduce((sum,x)=>sum+x.count,0);
     const totalAmount = rows.reduce((sum,x)=>sum+x.subtotal,0);
-    const details = rows.length
-      ? rows.map(x=>`${x.code}${x.svc.name}，共使用${x.count}單位。`).join('\n')
-      : '未填寫碼別及單位數。';
+    const details = rows.length ? rows.map(x=>`${x.code}${x.svc.name}，共使用${x.count}單位。`).join('\n') : '未填寫碼別及單位數。';
     const note = v('mutQuotaNote') ? `\n補充說明：${v('mutQuotaNote')}。` : '';
     text = `個案實際服務使用情形如下：
 
@@ -584,7 +525,7 @@ ${details}
 function clearMutation(){
   document.querySelectorAll('#mutationTool input').forEach(inp=>{
     if(['mutUnitName','mutContactName','mutContactTitle','mutContactPhone'].includes(inp.id)) return;
-    if(inp.type === 'date' || inp.type === 'time' || inp.type === 'month' || inp.type === 'number' || inp.type === 'text') inp.value = '';
+    if(['date','time','month','number','text'].includes(inp.type)) inp.value = '';
   });
   document.querySelectorAll('#mutationTool textarea').forEach(t=>t.value='');
   $('mutationOutput').value = '';
@@ -602,13 +543,15 @@ function initMutationTool(){
   $('mutType').addEventListener('change', renderMutationSpecific);
   $('saveMutSettings').addEventListener('click', saveMutSettings);
   $('generateMutation').addEventListener('click', generateMutation);
-  $('copyMutation').addEventListener('click',()=>{
-    if(!$('mutationOutput').value.trim()) generateMutation();
-    copyText($('mutationOutput').value, '異動通報');
-  });
+  $('copyMutation').addEventListener('click',()=>{ if(!$('mutationOutput').value.trim()) generateMutation(); copyText($('mutationOutput').value, '異動通報'); });
   $('clearMutation').addEventListener('click', clearMutation);
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
+  initTabs();
+  initQuota();
+  initCodeTool();
+  initFeeTool();
+  initVisitTool();
   initMutationTool();
 });
