@@ -56,7 +56,7 @@ label{display:block;font-weight:700;color:var(--ink);font-size:14px}select,input
 .visit-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,.8fr);gap:18px;align-items:start}.visit-form{display:flex;flex-direction:column;gap:14px}.visit-block{box-shadow:none}summary{font-size:18px;font-weight:900;cursor:pointer;color:var(--brand-dark)}details > *:not(summary){margin-top:14px}.checkbox-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.check-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);background:white;border-radius:14px;font-weight:700}.check-item input{width:auto;margin:0}.code-checks{grid-template-columns:repeat(3,minmax(0,1fr))}.visit-output-wrap{position:sticky;top:76px}.visit-output-wrap h3{margin:0 0 12px}.visit-output{min-height:720px;line-height:1.75;background:white}
 footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid var(--line)}
 @media(max-width:860px){.tool-tabs{justify-content:flex-start}.grid-2,.grid-3,.result-grid,.service-list,.visit-layout{grid-template-columns:1fr}.fee-row{grid-template-columns:1fr}.checkbox-grid,.code-checks{grid-template-columns:1fr}.visit-output-wrap{position:static}.visit-output{min-height:420px}h1{font-size:24px}.hero{padding-top:22px}.result-card strong{font-size:24px}}
-.fee-result-grid{grid-template-columns:repeat(4,1fr)}
+.fee-result-grid{grid-template-columns:repeat(3,1fr)}
 .notice-card{margin-top:14px;border-radius:18px;padding:14px 16px;font-weight:800;border:1px solid var(--line);box-shadow:var(--shadow)}
 .notice-card.success{background:#f2f7ee;color:#577449;border-color:#d7e6cf}
 .notice-card.danger{background:#fff0ea;color:#ad5d4d;border-color:#efc8bd}
@@ -137,7 +137,7 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
 
 /* Mutation report generator */
 .brand-logo-img{
-  width:min(360px,88vw);
+  width:min(460px,92vw);
   height:auto;
   display:block;
   filter:drop-shadow(0 8px 18px rgba(100,70,45,.08));
@@ -153,20 +153,5 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
 .small-note{color:var(--muted);font-size:12px;line-height:1.65;margin:8px 0 0}
 @media(max-width:860px){
   .mutation-layout,.inline-fields,.mut-row{grid-template-columns:1fr}
-  .brand-logo-img{width:min(300px,92vw)}
+  .brand-logo-img{width:min(360px,94vw)}
 }
-
-
-/* Supervisor practical tips */
-.supervisor-tip{
-  margin:12px 0;
-  padding:12px 14px;
-  border-radius:16px;
-  background:#fff3df;
-  border:1px dashed #d9b78e;
-  color:#6f5744;
-  line-height:1.75;
-}
-.supervisor-tip strong{display:block;color:#8f6748;margin-bottom:4px}
-.supervisor-tip span{display:block}
-.site-footer small + small{margin-top:6px}
