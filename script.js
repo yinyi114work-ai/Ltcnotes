@@ -5,31 +5,15 @@ const visitFieldGroups = {
   physicalFields: [
     ['行走能力',['可獨立行走','使用輔具行走','需他人攙扶','輪椅代步','臥床']],
     ['移位能力',['可獨立移位','需口頭提醒','需部分協助','需完全協助']],
-    ['上下樓梯',['可獨立上下樓','需扶手輔助','需他人協助','無法上下樓']],
-    ['進食能力',['可自行進食','需備餐協助','需餵食協助','管灌餵食']],
-    ['穿脫衣物',['可自行完成','需部分協助','需完全協助']],
     ['沐浴能力',['可自行完成','需部分協助','需完全協助']],
     ['如廁能力',['可自行如廁','需部分協助','需完全協助']],
-    ['排尿狀況',['正常','尿失禁','使用尿布','留置導尿管']],
-    ['排便狀況',['正常','偶有失禁','長期失禁','造口']],
+    ['進食能力',['可自行進食','需備餐協助','需餵食協助','管灌餵食']],
     ['睡眠狀況',['睡眠良好','偶有失眠','夜間頻繁醒來','日夜顛倒','需安眠藥協助']],
     ['用藥管理',['可自行管理','家屬協助管理','居服員提醒服藥','常忘記服藥','需持續追蹤']],
     ['就醫狀況',['定期回診','近期住院','近期急診','近期病況變化','就醫交通需協助']],
-    ['疼痛狀況',['無明顯疼痛','偶有疼痛','長期疼痛','疼痛需追蹤']]
-  ],
-  psychFields: [
     ['情緒狀況',['穩定','偶有焦慮','偶有憂鬱','易怒','情緒起伏大']],
-    ['服務接受度',['願意接受服務','偶有拒絕','經常拒絕','需持續建立關係']],
-    ['認知狀況',['意識清楚','記憶力下降','失智症','難以表達需求']]
-  ],
-  spiritualFields: [
-    ['生活滿意度',['滿意目前生活','尚可','不滿意','未明確表達']],
-    ['信仰支持',['有固定信仰','偶爾參與宗教活動','無特殊信仰','未提及']],
-    ['生活目標感',['對生活有期待','尚可','較缺乏動力','需持續關注']]
-  ],
-  socialFields: [
+    ['認知狀況',['意識清楚','記憶力下降','失智症','難以表達需求']],
     ['家庭支持',['家屬支持良好','家屬支持尚可','家屬支持有限','缺乏家庭支持']],
-    ['社區參與',['有參與據點','有參與活動','少有外出','幾乎無社會參與']],
     ['經濟狀況',['穩定','尚可','有經濟壓力','未明確表示']]
   ],
   caregiverFields: [
@@ -90,7 +74,7 @@ function serviceOptionHtml(){
 
 function renderServices(filter=''){
   const q = filter.trim().toLowerCase();
-  const list = serviceData.filter(s=>[s.code,s.name,s.category,s.desc,s.note].join(' ').toLowerCase().includes(q));
+  const list = serviceData.filter(s=>[s.code,s.name,s.category,s.desc,s.note,s.tip || ''].join(' ').toLowerCase().includes(q));
   $('serviceList').innerHTML = list.map(s=>`
     <article class="service-card">
       <h3>${s.code}｜${s.name}</h3>
@@ -102,6 +86,7 @@ function renderServices(filter=''){
       </div>
       <p><strong>支付基準摘要：</strong>${s.desc}</p>
       <p><strong>注意事項：</strong>${s.note}</p>
+      ${s.tip ? `<div class="supervisor-tip"><strong>☕ 居督碎碎唸：</strong><span>${s.tip}</span></div>` : ''}
       <p><strong>服務計畫：</strong>${s.plan}</p>
     </article>
   `).join('') || '<p class="card">查無符合的碼別。</p>';
@@ -236,22 +221,30 @@ function makeVisitRecord(){
   const adjust = $('needAdjust').value;
 
   const sections = [];
-  sections.push(`一、個案身心靈社會狀況\n本次家訪重點為${purpose}。個案身體及健康功能評估如下：${sentenceFromFields('physicalFields')}${healthNote ? '補充說明：' + healthNote + '。' : ''}\n心理狀況：${sentenceFromFields('psychFields')}靈性狀況：${sentenceFromFields('spiritualFields')}社會支持：${sentenceFromFields('socialFields')}`);
-  sections.push(`二、居住環境評估\n本次訪視評估居住環境：${env.length ? env.join('、') : '未勾選環境項目'}。${environmentNote ? '補充說明：' + environmentNote + '。' : '後續持續留意居家動線及照顧安全。'}`);
-  sections.push(`三、主要照顧者評估\n${sentenceFromFields('caregiverFields')}後續持續關注主要照顧者負荷及照顧資源使用情形。`);
-  sections.push(`四、服務使用及執行情形\n個案目前使用服務包含：${serviceNames}。${sentenceFromFields('serviceUseFields')}\n${followups.join('')}`);
-  sections.push(`五、居家服務目標\n${goals.length ? goals.map((g,i)=>`${i+1}. ${g}`).join('\n') : '目前未勾選服務碼別，故未自動產生服務目標。'}`);
-  sections.push(`六、服務計畫\n${plans.length ? plans.map((p,i)=>`${i+1}. ${p}`).join('\n') : '目前未勾選服務碼別，故未自動產生服務計畫。'}`);
+  sections.push(`一、個案狀況評估
+本次家訪重點為${purpose}。個案狀況評估如下：${sentenceFromFields('physicalFields')}${healthNote ? '補充說明：' + healthNote + '。' : ''}`);
+  sections.push(`二、居住環境與主要照顧者評估
+本次訪視評估居住環境：${env.length ? env.join('、') : '未勾選環境項目'}。${environmentNote ? '補充說明：' + environmentNote + '。' : '後續持續留意居家動線及照顧安全。'}
+主要照顧者評估：${sentenceFromFields('caregiverFields')}後續持續關注照顧者負荷及照顧資源使用情形。`);
+  sections.push(`三、服務使用及執行情形
+個案目前使用服務包含：${serviceNames}。${sentenceFromFields('serviceUseFields')}
+${followups.join('')}`);
+  sections.push(`四、居家服務目標
+${goals.length ? goals.map((g,i)=>`${i+1}. ${g}`).join('\\n') : '目前未勾選服務碼別，故未自動產生服務目標。'}`);
+  sections.push(`五、服務計畫
+${plans.length ? plans.map((p,i)=>`${i+1}. ${p}`).join('\\n') : '目前未勾選服務碼別，故未自動產生服務計畫。'}`);
   const incidentText = inc.includes('無特殊異常事件') ? '近期無特殊異常事件。' : (inc.length ? `近期需追蹤異常事件包含：${inc.join('、')}。` : '未勾選異常事件。');
   const needText = needs.includes('暫無新增需求') ? '目前暫無新增需求。' : (needs.length ? `目前需求變化包含：${needs.join('、')}。` : '未勾選需求變化。');
-  sections.push(`七、異常事件與需求變化\n${incidentText}${needText}${adjust !== '暫無調整需求' ? '服務調整評估：' + adjust + '。' : '目前服務安排暫無調整需求。'}`);
-  sections.push(`八、家訪結論及後續建議\n本次家訪評估個案服務使用情形大致穩定，居服員服務執行狀況將持續依照顧計畫追蹤。後續將持續關注個案身心狀況、居住環境安全、主要照顧者負荷及服務需求變化，必要時再與個管或相關單位討論服務調整。${extraNote ? '\n補充紀錄：' + extraNote : ''}`);
+  sections.push(`六、異常事件與需求變化
+${incidentText}${needText}${adjust !== '暫無調整需求' ? '服務調整評估：' + adjust + '。' : '目前服務安排暫無調整需求。'}`);
+  sections.push(`七、家訪結論及後續建議
+本次家訪評估個案服務使用情形大致穩定，居服員服務執行狀況將持續依照顧計畫追蹤。後續將持續關注個案身心狀況、居住環境安全、主要照顧者負荷及服務需求變化，必要時再與相關單位討論服務調整。${extraNote ? '\\n補充紀錄：' + extraNote : ''}`);
 
   lastVisitSections = {
     full: sections.join('\n\n'),
-    assessment: sections.slice(0,4).join('\n\n'),
-    plan: sections.slice(4,6).join('\n\n'),
-    conclusion: sections.slice(6,8).join('\n\n')
+    assessment: sections.slice(0,3).join('\n\n'),
+    plan: sections.slice(3,5).join('\n\n'),
+    conclusion: sections.slice(5,7).join('\n\n')
   };
   $('visitOutput').value = lastVisitSections.full;
 }
@@ -426,10 +419,12 @@ function renderMutationSpecific(){
 
   const html = {
     pause: `<div class="card"><h3 class="card-title">暫停服務</h3><div class="grid-2">
+      <label>暫停類型<select id="mutPauseKind"><option value="single">單次服務暫停</option><option value="period">期間暫停服務</option></select></label>
       <label>暫停原因<select id="mutPauseReason">${optionList(reasonPause)}</select></label>
-      <label>暫停起始日<input id="mutPauseStart" type="date"></label>
-      <label>預計恢復日（可不填）<input id="mutPauseEnd" type="date"></label>
-      <label>補充說明<input id="mutPauseNote" placeholder="例如：住院治療、家屬暫自行照顧"></label>
+      <label class="pause-single-field">暫停日期<input id="mutPauseDate" type="date"></label>
+      <label class="pause-period-field">暫停起始日<input id="mutPauseStart" type="date"></label>
+      <label class="pause-period-field">預計恢復日（可不填）<input id="mutPauseEnd" type="date"></label>
+      <label>補充說明<input id="mutPauseNote" placeholder="例如：當日回診、住院治療、家屬暫自行照顧"></label>
     </div></div>`,
     end: `<div class="card"><h3 class="card-title">結束服務</h3><div class="grid-2">
       <label>結束原因<select id="mutEndReason">${optionList(reasonEnd)}</select></label>
@@ -483,6 +478,17 @@ function renderMutationSpecific(){
     </div></div>`
   }[type] || '';
   form.innerHTML = html;
+
+  if(type === 'pause'){
+    const pauseKind = $('mutPauseKind');
+    const updatePauseFields = ()=>{
+      const isSingle = pauseKind.value === 'single';
+      document.querySelectorAll('.pause-single-field').forEach(el=>el.style.display = isSingle ? '' : 'none');
+      document.querySelectorAll('.pause-period-field').forEach(el=>el.style.display = isSingle ? 'none' : '');
+    };
+    pauseKind.addEventListener('change', updatePauseFields);
+    updatePauseFields();
+  }
 
   if(type === 'quota'){
     $('addMutQuotaRow').addEventListener('click',()=>addMutQuotaRow());
@@ -540,9 +546,13 @@ function generateMutation(){
   const prefix = commonNoticePrefix();
   let text = '';
   if(type === 'pause'){
-    const end = v('mutPauseEnd') ? `，預計暫停至${rocDate(v('mutPauseEnd'))}` : '';
     const note = v('mutPauseNote') ? `，${v('mutPauseNote')}` : '';
-    text = `${prefix}，因${v('mutPauseReason')}${note}，故自${rocDate(v('mutPauseStart'))}起暫停服務${end}，以上通報。`;
+    if(v('mutPauseKind') === 'single'){
+      text = `${prefix}，因${v('mutPauseReason')}${note}，故${rocDate(v('mutPauseDate'))}單次服務暫停，以上通報。`;
+    }else{
+      const end = v('mutPauseEnd') ? `，預計暫停至${rocDate(v('mutPauseEnd'))}` : '';
+      text = `${prefix}，因${v('mutPauseReason')}${note}，故自${rocDate(v('mutPauseStart'))}起暫停服務${end}，以上通報。`;
+    }
   }else if(type === 'end'){
     const record = v('mutEndRecord') === '尚未完成登打' ? `目前服務紀錄尚未完成登打，預計於${rocDate(v('mutEndRecordDate'))}前完成` : (v('mutEndRecord') === '無服務紀錄需登打' ? '本案無服務紀錄需登打' : '目前服務紀錄已完成登打');
     const help = checkedValues('mutEndHelp');
