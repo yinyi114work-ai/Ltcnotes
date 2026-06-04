@@ -12,7 +12,7 @@
       <img class="brand-logo-img" src="logo.png" alt="長照研究室 LONG-TERM CARE LAB Logo" />
     </div>
     <h1>居家督導輔助小工具</h1>
-    <p class="hero-text">額度計算｜碼別查詢｜費用預估｜家訪紀錄生成｜異動通報產生</p>
+    <p class="hero-text">額度計算｜碼別查詢｜費用預估｜家訪紀錄生成｜異動通報產生｜換證檢核</p>
     <p class="source-note">資料基礎：115年度長期照顧服務申請及給付辦法附表。金額採小數點後無條件捨去。</p>
   </header>
 
@@ -22,6 +22,7 @@
     <button class="tab-btn" data-target="feeTool">服務費用預估</button>
     <button class="tab-btn" data-target="visitTool">家訪紀錄生成器</button>
     <button class="tab-btn" data-target="mutationTool">異動通報產生器</button>
+    <button class="tab-btn" data-target="renewalTool">換證檢核器</button>
   </nav>
 
   <main class="container">
@@ -214,6 +215,70 @@
         </div>
       </div>
     </section>
+
+
+    <section id="renewalTool" class="tool-section">
+      <div class="section-title">
+        <h2>長照小卡換證檢核器</h2>
+        <p>輸入小卡效期與重點積分，初步檢核是否符合換證條件，並自動判斷原民／多元課程年度是否達標。</p>
+      </div>
+
+      <div class="renewal-layout">
+        <div class="renewal-form">
+          <details open class="visit-block">
+            <summary>一、小卡資料與總積分</summary>
+            <div class="grid-2">
+              <label>小卡生效日<input id="renewStart" type="date"></label>
+              <label>小卡到期日<input id="renewEnd" type="date"></label>
+              <label>六年總積分<input id="renewTotalPoints" type="number" min="0" step="0.5" placeholder="例如：120"></label>
+              <label>專業課程積分<input id="renewProfessionalPoints" type="number" min="0" step="0.5" placeholder="至少84點"></label>
+            </div>
+            <p class="hint-text">小提醒：長照小卡可於到期日前 6 個月內申請更新。日期欄位請以西元日期輸入，例如 2024/07/01。</p>
+          </details>
+
+          <details class="visit-block">
+            <summary>二、專業品質／倫理／法規</summary>
+            <div class="grid-3">
+              <label>專業品質<input id="renewQuality" type="number" min="0" step="0.5" placeholder="點數"></label>
+              <label>專業倫理<input id="renewEthics" type="number" min="0" step="0.5" placeholder="點數"></label>
+              <label>專業法規<input id="renewLaw" type="number" min="0" step="0.5" placeholder="點數"></label>
+            </div>
+            <p class="hint-text">三類合計至少 24 點，且各項不得為 0；最多採計 36 點，超過部分不再累計。</p>
+          </details>
+
+          <details class="visit-block">
+            <summary>三、消防／緊急／感染／性別</summary>
+            <div class="grid-2">
+              <label>消防安全<input id="renewFire" type="number" min="0" step="0.5" placeholder="點數"></label>
+              <label>緊急應變<input id="renewEmergency" type="number" min="0" step="0.5" placeholder="點數"></label>
+              <label>感染管制<input id="renewInfection" type="number" min="0" step="0.5" placeholder="點數"></label>
+              <label>性別敏感度<input id="renewGender" type="number" min="0" step="0.5" placeholder="點數"></label>
+            </div>
+            <p class="hint-text">四項主題皆需有積分，且合計至少 10 點。</p>
+          </details>
+
+          <details open class="visit-block">
+            <summary>四、原民／多元課程</summary>
+            <p class="hint-text">113/06/02 以前：原住民族與多元族群文化敏感度及能力（原名稱：多元文化族群）合計 2 點。113/06/03 以後：依小卡年度切點，每年原民至少 1 點、多元至少 1 點。</p>
+            <div class="button-row"><button id="addCultureCourse" class="secondary-btn" type="button">＋新增課程</button></div>
+            <div id="cultureCourseRows" class="renew-course-rows"></div>
+          </details>
+
+          <div class="button-row">
+            <button id="checkRenewal" class="primary-btn" type="button">檢核換證資格</button>
+            <button id="copyRenewal" class="secondary-btn" type="button">複製檢核結果</button>
+            <button id="clearRenewal" class="ghost-btn" type="button">清空</button>
+          </div>
+        </div>
+
+        <div class="visit-output-wrap renewal-output-wrap">
+          <h3>檢核結果</h3>
+          <div id="renewalSummary" class="renewal-summary">請輸入資料後按下「檢核換證資格」。</div>
+          <textarea id="renewalOutput" class="visit-output renewal-output" placeholder="這裡會產生可複製的檢核結果。"></textarea>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <footer class="site-footer">

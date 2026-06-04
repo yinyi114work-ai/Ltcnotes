@@ -547,6 +547,215 @@ function initMutationTool(){
   $('clearMutation').addEventListener('click', clearMutation);
 }
 
+
+// ===== 長照小卡換證檢核器 =====
+let lastRenewalText = '';
+const CULTURE_CUTOFF_OLD_END = new Date(2024, 5, 2);  // 113/06/02
+const CULTURE_CUTOFF_NEW_START = new Date(2024, 5, 3); // 113/06/03
+
+function n(id){ return Number(($(id)?.value || 0)); }
+function parseDateInput(id){
+  const value = v(id);
+  if(!value) return null;
+  const [y,m,d] = value.split('-').map(Number);
+  if(!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+function formatDateTW(date){
+  if(!(date instanceof Date) || isNaN(date)) return '未填寫';
+  return `${date.getFullYear() - 1911}年${date.getMonth() + 1}月${date.getDate()}日`;
+}
+function addYears(date, years){
+  const d = new Date(date.getTime());
+  d.setFullYear(d.getFullYear() + years);
+  return d;
+}
+function addMonths(date, months){
+  const d = new Date(date.getTime());
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+function addDays(date, days){
+  const d = new Date(date.getTime());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+function cultureCourseRowHtml(){
+  return `<div class="renew-course-row">
+    <label>上課日期<input class="culture-date" type="date"></label>
+    <label>課程名稱<input class="culture-name" placeholder="例如：原住民族文化敏感度及能力"></label>
+    <label>類別<select class="culture-type"><option value="old">舊制／多元文化族群</option><option value="indigenous">原民</option><option value="multicultural">多元</option></select></label>
+    <label>積分<input class="culture-points" type="number" min="0" step="0.5" value="1"></label>
+    <button class="remove-row" type="button">刪除</button>
+  </div>`;
+}
+function addCultureCourseRow(){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = cultureCourseRowHtml();
+  const row = wrap.firstElementChild;
+  row.querySelector('.remove-row').addEventListener('click',()=>row.remove());
+  $('cultureCourseRows').appendChild(row);
+}
+function getCultureCourses(){
+  return Array.from(document.querySelectorAll('#cultureCourseRows .renew-course-row')).map(row=>{
+    const dateStr = row.querySelector('.culture-date').value;
+    const [y,m,d] = dateStr ? dateStr.split('-').map(Number) : [];
+    const date = y && m && d ? new Date(y, m - 1, d) : null;
+    return {
+      date,
+      dateStr,
+      name: row.querySelector('.culture-name').value.trim(),
+      type: row.querySelector('.culture-type').value,
+      points: Number(row.querySelector('.culture-points').value || 0)
+    };
+  }).filter(x=>x.date && !isNaN(x.date) && x.points > 0);
+}
+function buildCardYears(start, end){
+  const years = [];
+  if(!start || !end || end < start) return years;
+  for(let i=0; i<6; i++){
+    const yStart = addYears(start, i);
+    let yEnd = addDays(addYears(start, i + 1), -1);
+    if(yStart > end) break;
+    if(yEnd > end) yEnd = new Date(end.getTime());
+    years.push({index:i+1, start:yStart, end:yEnd});
+  }
+  return years;
+}
+function courseInRange(course, start, end){
+  return course.date >= start && course.date <= end;
+}
+function checkRenewal(){
+  const issues = [];
+  const okItems = [];
+  const start = parseDateInput('renewStart');
+  const end = parseDateInput('renewEnd');
+  const earliest = end ? addMonths(end, -6) : null;
+
+  const total = n('renewTotalPoints');
+  const professional = n('renewProfessionalPoints');
+  const quality = n('renewQuality');
+  const ethics = n('renewEthics');
+  const law = n('renewLaw');
+  const qelTotal = quality + ethics + law;
+  const qelCounted = Math.min(qelTotal, 36);
+  const fire = n('renewFire');
+  const emergency = n('renewEmergency');
+  const infection = n('renewInfection');
+  const gender = n('renewGender');
+  const requiredTotal = fire + emergency + infection + gender;
+
+  if(!start) issues.push('未填寫小卡生效日。');
+  if(!end) issues.push('未填寫小卡到期日。');
+  if(start && end && end < start) issues.push('小卡到期日不可早於生效日。');
+
+  if(total >= 120) okItems.push(`六年總積分 ${total} 點，已達 120 點。`);
+  else issues.push(`六年總積分目前 ${total} 點，尚缺 ${Math.max(120-total,0)} 點。`);
+
+  if(professional >= 84) okItems.push(`專業課程 ${professional} 點，已達 84 點。`);
+  else issues.push(`專業課程目前 ${professional} 點，尚缺 ${Math.max(84-professional,0)} 點。`);
+
+  if(quality > 0 && ethics > 0 && law > 0 && qelTotal >= 24){
+    okItems.push(`專業品質／倫理／法規合計 ${qelTotal} 點，採計 ${qelCounted} 點，符合至少 24 點且各項不為 0。`);
+  }else{
+    const missing = [];
+    if(quality <= 0) missing.push('專業品質');
+    if(ethics <= 0) missing.push('專業倫理');
+    if(law <= 0) missing.push('專業法規');
+    if(qelTotal < 24) issues.push(`專業品質／倫理／法規合計目前 ${qelTotal} 點，尚缺 ${24-qelTotal} 點。`);
+    if(missing.length) issues.push(`${missing.join('、')}目前為 0 點，需至少有積分。`);
+  }
+
+  if(fire > 0 && emergency > 0 && infection > 0 && gender > 0 && requiredTotal >= 10){
+    okItems.push(`消防／緊急／感染／性別合計 ${requiredTotal} 點，符合至少 10 點且各項不為 0。`);
+  }else{
+    const missing = [];
+    if(fire <= 0) missing.push('消防安全');
+    if(emergency <= 0) missing.push('緊急應變');
+    if(infection <= 0) missing.push('感染管制');
+    if(gender <= 0) missing.push('性別敏感度');
+    if(requiredTotal < 10) issues.push(`消防／緊急／感染／性別合計目前 ${requiredTotal} 點，尚缺 ${10-requiredTotal} 點。`);
+    if(missing.length) issues.push(`${missing.join('、')}目前為 0 點，需至少完成一堂／有積分。`);
+  }
+
+  const courses = getCultureCourses();
+  const oldCultureTotal = courses.filter(c=>c.date <= CULTURE_CUTOFF_OLD_END).reduce((sum,c)=>sum+c.points,0);
+  if(oldCultureTotal >= 2) okItems.push(`113/06/02 以前原民＋多元舊制課程合計 ${oldCultureTotal} 點，已達 2 點。`);
+  else issues.push(`113/06/02 以前原民＋多元舊制課程合計 ${oldCultureTotal} 點，尚缺 ${Math.max(2-oldCultureTotal,0)} 點。`);
+
+  const yearLines = [];
+  if(start && end && end >= CULTURE_CUTOFF_NEW_START){
+    const years = buildCardYears(start, end).filter(y=>y.end >= CULTURE_CUTOFF_NEW_START);
+    years.forEach(y=>{
+      const checkStart = y.start < CULTURE_CUTOFF_NEW_START ? CULTURE_CUTOFF_NEW_START : y.start;
+      const indigenous = courses.filter(c=>c.type === 'indigenous' && courseInRange(c, checkStart, y.end)).reduce((sum,c)=>sum+c.points,0);
+      const multicultural = courses.filter(c=>c.type === 'multicultural' && courseInRange(c, checkStart, y.end)).reduce((sum,c)=>sum+c.points,0);
+      const line = `第${y.index}年度（${formatDateTW(checkStart)}～${formatDateTW(y.end)}）：原民 ${indigenous} 點／多元 ${multicultural} 點`;
+      yearLines.push(`${indigenous >= 1 && multicultural >= 1 ? '✅' : '❌'} ${line}`);
+      if(indigenous < 1) issues.push(`第${y.index}年度缺原住民族文化敏感度及能力 ${1-indigenous} 點。`);
+      if(multicultural < 1) issues.push(`第${y.index}年度缺多元族群文化敏感度及能力 ${1-multicultural} 點。`);
+    });
+    if(years.length && yearLines.every(line=>line.startsWith('✅'))) okItems.push('113/06/03 以後各小卡年度之原民／多元課程皆已達標。');
+  }
+
+  const canApplyDate = earliest ? formatDateTW(earliest) : '請先填寫小卡到期日';
+  const finalOk = issues.length === 0;
+  const resultTitle = finalOk ? '✅ 初步符合換證條件' : '⚠️ 尚未符合換證條件';
+  const summary = $('renewalSummary');
+  summary.className = `renewal-summary ${finalOk ? 'success' : 'danger'}`;
+  summary.textContent = `${resultTitle}｜最早可於 ${canApplyDate} 申請換證`;
+
+  const text = `${resultTitle}
+
+一、小卡資料
+生效日：${start ? formatDateTW(start) : '未填寫'}
+到期日：${end ? formatDateTW(end) : '未填寫'}
+最早可申請換證日：${canApplyDate}
+
+二、已符合項目
+${okItems.length ? okItems.map(x=>'✅ '+x).join('\n') : '尚無完全符合項目。'}
+
+三、待補足／需確認項目
+${issues.length ? issues.map(x=>'❌ '+x).join('\n') : '無。'}
+
+四、原民／多元年度檢核
+113/06/02以前合計：${oldCultureTotal} 點
+${yearLines.length ? yearLines.join('\n') : '此小卡效期未涵蓋 113/06/03 以後，或尚未填寫小卡效期。'}
+
+提醒：本工具僅依輸入資料進行初步檢核，實際積分採認、課程類別歸屬及換證資格，仍以衛福部系統資料及地方主管機關審查結果為準。`;
+  lastRenewalText = text;
+  $('renewalOutput').value = text;
+}
+function clearRenewal(){
+  document.querySelectorAll('#renewalTool input').forEach(inp=>inp.value='');
+  $('cultureCourseRows').innerHTML = '';
+  $('renewalOutput').value = '';
+  lastRenewalText = '';
+  $('renewalSummary').className = 'renewal-summary';
+  $('renewalSummary').textContent = '請輸入資料後按下「檢核換證資格」。';
+  addCultureCourseRow();
+}
+async function copyRenewalResult(){
+  if(!$('renewalOutput').value.trim()) checkRenewal();
+  try{
+    await navigator.clipboard.writeText($('renewalOutput').value);
+    showToast('已複製檢核結果');
+  }catch(err){
+    $('renewalOutput').focus();
+    $('renewalOutput').select();
+    document.execCommand('copy');
+    showToast('已複製檢核結果');
+  }
+}
+function initRenewalTool(){
+  if(!$('renewalTool')) return;
+  $('addCultureCourse').addEventListener('click', addCultureCourseRow);
+  $('checkRenewal').addEventListener('click', checkRenewal);
+  $('copyRenewal').addEventListener('click', copyRenewalResult);
+  $('clearRenewal').addEventListener('click', clearRenewal);
+  addCultureCourseRow();
+}
+
 window.addEventListener('DOMContentLoaded',()=>{
   initTabs();
   initQuota();
@@ -554,4 +763,5 @@ window.addEventListener('DOMContentLoaded',()=>{
   initFeeTool();
   initVisitTool();
   initMutationTool();
+  initRenewalTool();
 });
