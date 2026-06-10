@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>長照研究室－居家督導輔助小工具</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6H934JVD52"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6H934JVD52');
+  </script>
 </head>
 <body>
   <header class="hero final-hero">
@@ -289,5 +297,77 @@
 
   <script src="serviceData.js"></script>
   <script src="script.js"></script>
+
+  <script>
+    // GA4 功能使用追蹤：只記錄功能操作，不記錄個資或表單內容
+    (function () {
+      function sendToolEvent(eventName, params) {
+        if (typeof gtag !== 'function') return;
+        gtag('event', eventName, Object.assign({
+          tool_site: 'homecare_supervisor_tool'
+        }, params || {}));
+      }
+
+      document.querySelectorAll('.tab-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          sendToolEvent('tool_tab_click', {
+            tool_name: btn.dataset.target || '',
+            tab_text: (btn.textContent || '').trim()
+          });
+        });
+      });
+
+      var buttonEvents = {
+        addFeeRow: 'fee_add_row',
+        generateVisit: 'visit_record_generate',
+        copyVisit: 'visit_record_copy_full',
+        copyPlan: 'visit_plan_copy',
+        copyConclusion: 'visit_conclusion_copy',
+        clearVisit: 'visit_form_clear',
+        saveMutSettings: 'mutation_settings_save',
+        generateMutation: 'mutation_report_generate',
+        copyMutation: 'mutation_report_copy',
+        clearMutation: 'mutation_form_clear',
+        addCultureCourse: 'renewal_culture_course_add',
+        checkRenewal: 'renewal_check',
+        copyRenewal: 'renewal_result_copy',
+        clearRenewal: 'renewal_form_clear'
+      };
+
+      Object.keys(buttonEvents).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('click', function () {
+          sendToolEvent(buttonEvents[id], { button_id: id });
+        });
+      });
+
+      ['cmsSelect', 'identitySelect'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', function () {
+          sendToolEvent('quota_input_change', { field_id: id });
+        });
+      });
+
+      ['feeCms', 'feeIdentity'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', function () {
+          sendToolEvent('fee_input_change', { field_id: id });
+        });
+      });
+
+      var searchInput = document.getElementById('serviceSearch');
+      if (searchInput) {
+        searchInput.addEventListener('change', function () {
+          sendToolEvent('service_code_search', {
+            has_keyword: searchInput.value.trim().length > 0
+          });
+        });
+      }
+    })();
+  </script>
+
 </body>
 </html>
