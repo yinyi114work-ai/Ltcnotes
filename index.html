@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>長照研究室－居家督導輔助小工具</title>
+  <title>Longcare.Notes｜居家督導輔助小工具</title>
   <link rel="stylesheet" href="style.css" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-6H934JVD52"></script>
@@ -13,16 +13,103 @@
     gtag('js', new Date());
     gtag('config', 'G-6H934JVD52');
   </script>
+
+  <style>
+    .brand-subtitle{
+      margin:.35rem 0 .2rem;
+      font-weight:700;
+      letter-spacing:.02em;
+    }
+    .tool-page-title{
+      margin:.25rem 0 .45rem;
+      font-size:clamp(1.35rem,4vw,2rem);
+    }
+    .law-shortcut{
+      max-width:1180px;
+      margin:18px auto 10px;
+      padding:0 16px;
+    }
+    .law-shortcut-link{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:16px 18px;
+      border-radius:18px;
+      background:#fff8ec;
+      border:1px solid #ead8b9;
+      box-shadow:0 5px 16px rgba(72,57,33,.08);
+      color:inherit;
+      text-decoration:none;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .law-shortcut-link:hover,
+    .law-shortcut-link:focus-visible{
+      transform:translateY(-1px);
+      box-shadow:0 8px 20px rgba(72,57,33,.12);
+      outline:none;
+    }
+    .law-shortcut-icon{
+      font-size:1.9rem;
+      line-height:1;
+      flex:0 0 auto;
+    }
+    .law-shortcut-copy{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+    }
+    .law-shortcut-copy strong{
+      font-size:1.08rem;
+    }
+    .law-shortcut-copy span{
+      line-height:1.55;
+      opacity:.82;
+    }
+    .law-shortcut-arrow{
+      margin-left:auto;
+      font-size:1.35rem;
+      font-weight:800;
+      flex:0 0 auto;
+    }
+    @media (max-width:640px){
+      .law-shortcut{
+        margin-top:12px;
+      }
+      .law-shortcut-link{
+        align-items:flex-start;
+        padding:15px;
+      }
+      .law-shortcut-copy span{
+        font-size:.93rem;
+      }
+    }
+  </style>
+
 </head>
 <body>
   <header class="hero final-hero">
     <div class="brand-logo-wrap" aria-label="長照研究室 Logo">
-      <img class="brand-logo-img" src="logo.png" alt="長照研究室 LONG-TERM CARE LAB Logo" />
+      <img class="brand-logo-img" src="logo.png" alt="Longcare.Notes 長照研究室 Logo" />
     </div>
-    <h1>居家督導輔助小工具</h1>
+    <h1>Longcare.Notes</h1>
+    <p class="brand-subtitle">長照研究室｜給長照人的萬能工具箱</p>
+    <h2 class="tool-page-title">居家督導輔助小工具</h2>
     <p class="hero-text">額度計算｜碼別查詢｜費用預估｜家訪紀錄生成｜異動通報產生｜換證檢核</p>
     <p class="source-note">資料基礎：115年度長期照顧服務申請及給付辦法附表。金額採小數點後無條件捨去。</p>
   </header>
+
+  <section class="law-shortcut" aria-label="長照法規速查入口">
+    <a href="./law/" class="law-shortcut-link">
+      <div class="law-shortcut-icon" aria-hidden="true">📚</div>
+      <div class="law-shortcut-copy">
+        <strong>長照法規速查</strong>
+        <span>輸入 BA13、AA01 或服務關鍵字，快速查看現行規定、相關函示與官方來源。</span>
+      </div>
+      <div class="law-shortcut-arrow" aria-hidden="true">→</div>
+    </a>
+  </section>
+
 
   <nav class="tool-tabs">
     <button class="tab-btn active" data-target="quotaTool">額度計算器</button>
@@ -290,7 +377,7 @@
   </main>
 
   <footer class="site-footer">
-    <div>© 長照研究室 LONG-TERM CARE LAB</div>
+    <div>© Longcare.Notes｜長照研究室</div>
     <small>※ 本工具部分內容由 AI 協助生成，請依實際個案狀況、相關法規及專業判斷審慎使用。</small>
     <small>※「居督碎碎唸」為本人實務工作經驗分享，內容可能因各縣市執行方式、主管機關解釋或服務單位規範而有所差異。如有疑義，請以中央及各地方政府最新規定為準。</small>
   </footer>
