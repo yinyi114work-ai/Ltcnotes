@@ -16,6 +16,7 @@ import html
 import json
 import os
 import re
+import socket
 import sys
 import tempfile
 import time
@@ -29,6 +30,18 @@ from urllib.parse import parse_qs, parse_qsl, urlencode, urljoin, urlparse, urlu
 from urllib.request import HTTPCookieProcessor, Request, build_opener
 from http.cookiejar import CookieJar
 from zoneinfo import ZoneInfo
+
+
+def prefer_ipv4() -> None:
+    """Avoid GitHub runner IPv6 routes that some government sites do not serve."""
+    original_getaddrinfo = socket.getaddrinfo
+
+    def getaddrinfo_ipv4_first(*args: object, **kwargs: object) -> list[tuple[object, ...]]:
+        results = original_getaddrinfo(*args, **kwargs)
+        ipv4 = [item for item in results if item[0] == socket.AF_INET]
+        return ipv4 or results
+
+    socket.getaddrinfo = getaddrinfo_ipv4_first  # type: ignore[assignment]
 
 
 DEFAULT_SEARCH_URL = (
@@ -624,6 +637,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    prefer_ipv4()
     args = build_parser().parse_args()
     try:
         scraped_count, total_count = synchronize(args)
