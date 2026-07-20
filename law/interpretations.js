@@ -2,7 +2,7 @@ window.INTERPRETATION_META = {
   "source": "https://mohwlaw.mohw.gov.tw/FINT/FINTQRY03.aspx?starDate=00000000&endDate=99991231&no=&n1=&n2=&kt=&kw=%E9%95%B7%E6%9C%9F%E7%85%A7%E9%A1%A7&kw2=&kw3=&kw4=&valid=3&type=etype_",
   "syncedAt": "",
   "scrapedCount": 0,
-  "count": 7,
+  "count": 12,
   "mode": "內建起始資料；啟用 GitHub Actions 後自動同步",
   "failedPages": 0
 };
@@ -91,6 +91,77 @@ window.INTERPRETATIONS = [
     "source": "https://www.health.taichung.gov.tw/1764739/post",
     "status": "歷史函釋，請併讀後續函示",
     "keywords": "起點 訖點 住所 偏遠地區 復健 洗腎",
+    "agency": "衛生福利部"
+  },
+  {
+    "id": "1101962470",
+    "codes": [
+      "BA16"
+    ],
+    "date": "110-09-27",
+    "docNo": "衛部顧字第1101962470號",
+    "title": "有關「代購或代領或代送服務」（BA16）代購餐食之規定",
+    "summary": "BA16 代購或代領或代送服務涉及餐食、日常用品等個案本人生活所需事項時，應回到照顧計畫、服務紀錄及費用核實原則判斷；實際適用仍須開啟原文確認。",
+    "source": "https://care.tycg.gov.tw/cp.aspx?n=412",
+    "status": "函釋索引（請開啟原文確認）",
+    "keywords": "BA16 代購 代領 代送 代購餐食 餐食 個案本人 服務紀錄",
+    "agency": "衛生福利部"
+  },
+  {
+    "id": "1100153767",
+    "codes": [
+      "BA16"
+    ],
+    "date": "111-01-14",
+    "docNo": "衛部顧字第1100153767號",
+    "title": "同住之失能者共同使用BA16應擇一扣其額度及部分負擔",
+    "summary": "同住失能者共同使用 BA16 代購、代領或代送服務時，涉及額度扣除及部分負擔歸屬；實際申報原則應依函文原文及地方審核結果辦理。",
+    "source": "https://www.health.ntpc.gov.tw/basic/?mode=detail&node=10825",
+    "status": "函釋索引（請開啟原文確認）",
+    "keywords": "BA16 同住 失能者 共同使用 擇一扣額度 部分負擔 代購 代領 代送",
+    "agency": "衛生福利部"
+  },
+  {
+    "id": "1110125518",
+    "codes": [
+      "BA15",
+      "BA16"
+    ],
+    "date": "111-07-05",
+    "docNo": "衛部顧字第1110125518號",
+    "title": "家務協助及代購服務（BA15、BA16）服務對象需在宅之疑義",
+    "summary": "BA15 家務協助與 BA16 代購服務涉及服務對象是否需在宅、服務內容與照顧計畫必要性判斷；實際適用應依函文原文及地方主管機關審核辦理。",
+    "source": "https://www.health.ntpc.gov.tw/basic/?mode=detail&node=10825",
+    "status": "函釋索引（請開啟原文確認）",
+    "keywords": "BA15 BA16 家務協助 代購服務 在宅 服務對象 代購 代領 代送",
+    "agency": "衛生福利部"
+  },
+  {
+    "id": "1111960819",
+    "codes": [
+      "GA09"
+    ],
+    "date": "111-05-13",
+    "docNo": "衛部顧字第1111960819號",
+    "title": "有關給付居家喘息服務（GA09）照顧組合之服務範圍疑義",
+    "summary": "居家喘息服務 GA09 涉及照顧組合服務範圍及照顧服務員資格檢核等事項；提供失智症者或 45 歲以下身心障礙者喘息服務時，應留意訓練資格與費用核給規範。",
+    "source": "https://ylshb.yunlin.gov.tw/News_Content.aspx?n=14903&s=380490",
+    "status": "函釋索引（請開啟原文確認）",
+    "keywords": "GA09 居家喘息 喘息服務 服務範圍 照顧組合 失智症 身心障礙 訓練資格",
+    "agency": "衛生福利部"
+  },
+  {
+    "id": "1091962583",
+    "codes": [
+      "GA09"
+    ],
+    "date": "109-11-04",
+    "docNo": "衛部顧字第1091962583號",
+    "title": "居家喘息服務疑義",
+    "summary": "居家喘息服務未列於部分照顧組合服務內容時，仍應回到喘息服務目的、服務範圍、照顧計畫及主管機關核定判斷；實際適用請開啟原文確認。",
+    "source": "https://care.tycg.gov.tw/cp.aspx?n=412",
+    "status": "函釋索引（請開啟原文確認）",
+    "keywords": "GA09 居家喘息 喘息服務 服務內容 照顧組合 服務範圍",
     "agency": "衛生福利部"
   },
   {

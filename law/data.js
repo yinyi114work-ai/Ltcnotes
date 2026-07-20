@@ -3,7 +3,7 @@ window.DATA_META = {
   "revisionDate": "114-06-19",
   "verifiedAt": "115-07-20",
   "codeCount": 166,
-  "interpretationCount": 7,
+  "interpretationCount": 12,
   "officialSource": "https://www.mohw.gov.tw/dl-97629-9ca5aed2-743b-46ed-8659-4e45d9996257.html"
 };
 
