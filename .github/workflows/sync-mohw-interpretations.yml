@@ -1,34 +1,61 @@
 name: 同步衛福部函釋
 
 on:
-  workflow_dispatch:
   schedule:
+    # 每週一台灣時間上午 9:15（GitHub Actions 使用 UTC）
     - cron: "15 1 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: write
   pages: write
 
+concurrency:
+  group: sync-mohw-interpretations
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - name: 取出網站檔案
+      - name: 下載網站檔案
         uses: actions/checkout@v4
 
-      - name: 同步衛福部法規檢索系統函釋
-        run: python3 scripts/sync_mohw_interpretations.py
-
-      - name: 提交同步結果
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: 設定 Python
+        uses: actions/setup-python@v5
         with:
-          commit_message: 同步衛福部函釋資料
-          file_pattern: law/interpretations.js
+          python-version: "3.12"
 
-      - name: 重新觸發 GitHub Pages
+      - name: 擷取並驗證桃園衛福部函釋索引
+        run: >-
+          python scripts/sync_mohw_interpretations.py
+          --search-url https://care.tycg.gov.tw/cp.aspx?n=412
+          --output law/interpretations.js
+          --code-data law/data.js
+          --minimum-records 10
+          --timeout 30
+
+      - name: 有更新時提交資料
+        id: commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add law/interpretations.js
+          if git diff --cached --quiet; then
+            echo "函釋資料沒有變更。"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "chore: 同步衛福部函釋"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 要求 GitHub Pages 重新發布
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api \
-            --method POST \
-            /repos/${{ github.repository }}/pages/builds
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds"
