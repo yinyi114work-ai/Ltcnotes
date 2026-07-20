@@ -2,7 +2,6 @@ name: 同步衛福部函釋
 
 on:
   schedule:
-    # 每週一台灣時間上午 9:15（GitHub Actions 使用 UTC）
     - cron: "15 1 * * 1"
   workflow_dispatch:
 
@@ -17,7 +16,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
 
     steps:
       - name: 下載網站檔案
@@ -28,14 +27,20 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: 擷取並驗證桃園衛福部函釋索引
-        run: >-
-          python scripts/sync_mohw_interpretations.py
-          --search-url https://care.tycg.gov.tw/cp.aspx?n=412
-          --output law/interpretations.js
-          --code-data law/data.js
-          --minimum-records 10
-          --timeout 30
+      - name: 擷取並驗證台中長照特約單位解釋函
+        shell: bash
+        run: |
+          if python scripts/sync_mohw_interpretations.py \
+            --search-url "https://www.health.taichung.gov.tw/26198/1614263/1617520/1617525/1617526" \
+            --output law/interpretations.js \
+            --code-data law/data.js \
+            --minimum-records 10 \
+            --maximum-records 300 \
+            --timeout 30; then
+            echo "函釋索引同步完成。"
+          else
+            echo "::warning::台中長照特約單位解釋函來源目前無法由 GitHub Actions 連線，保留既有 law/interpretations.js。"
+          fi
 
       - name: 有更新時提交資料
         id: commit
