@@ -469,7 +469,7 @@
       <h1>法規與函釋速查</h1>
       <p class="subtitle">輸入碼別、服務名稱、實務情境或公文文號；多個詞可用空格分開，例如「據點 陪同外出」。結果會優先顯示同時符合全部關鍵字的法規與函釋。</p>
       <div class="local-search-note">✓ 純瀏覽器搜尋，不使用 AI Token</div>
-      <div id="syncStatus" class="sync-note">函釋資料由衛生福利部法規檢索系統定期同步。</div>
+      <div id="syncStatus" class="sync-note">已內建臺中市政府衛生局公開函釋整理，不需等待線上同步。</div>
     </header>
 
     <main>
@@ -486,6 +486,8 @@
           <button class="example-button" type="button" data-query="陪同外出">陪同外出</button>
           <button class="example-button" type="button" data-query="據點 陪同外出">據點＋陪同外出</button>
           <button class="example-button" type="button" data-query="洗腎 陪同外出">洗腎＋陪同外出</button>
+          <button class="example-button" type="button" data-query="BA16 代購">BA16＋代購</button>
+          <button class="example-button" type="button" data-query="GA09 居家喘息">GA09＋居家喘息</button>
         </div>
         <div id="expandedTerms" class="expanded-terms" hidden></div>
       </section>
@@ -495,7 +497,7 @@
     </main>
 
     <footer>
-      <div>資料基礎：衛生福利部《長期照顧服務申請及給付辦法》附表及衛生福利部法規檢索系統公開函釋。</div>
+      <div>資料基礎：衛生福利部《長期照顧服務申請及給付辦法》附表，以及臺中市政府衛生局公開之衛生福利部函釋與附件。</div>
       <div>本工具為關鍵字速查整理，不取代主管機關個案審核、正式函文或最新法規；相關詞只用於協助搜尋，不代表法律概念完全相同。</div>
       <div id="dataVersion">資料版本：請以 data.js 標示版本為準。</div>
     </footer>
@@ -522,6 +524,10 @@
 
       const RELATED_TERM_GROUPS = [
         ['BA13', '陪同外出', '陪同就醫', '外出陪同'],
+        ['BA16', '代購', '代領', '代送', '代購或代領或代送服務', '代購餐食', '代領藥品', '藥品代購', '代購成藥'],
+        ['GA09', '居家喘息', '喘息服務', '居家喘息服務'],
+        ['DA01', '交通接送', '就醫接送', '復健接送'],
+        ['BA24', '協助排泄', '排泄', '失禁處理'],
         ['據點', 'C據點', 'C級巷弄長照站', '巷弄長照站', '社區照顧關懷據點'],
         ['洗腎', '血液透析', '透析'],
         ['復健', '復能', '物理治療', '職能治療']
@@ -614,10 +620,21 @@
         { value: item.status, weight: 8 }
       ];
 
+      const sourceQuality = item => {
+        const url = safeUrl(item.source || item.sourceUrl || item.url);
+        if (!url) return 0;
+        if (/\.(pdf|doc|docx|odt)(?:$|[?#])/i.test(url)) return 120;
+        if (/\/\d+\/post(?:$|[?#])/.test(url)) return 90;
+        if (/health\.taichung\.gov\.tw/.test(url)) return 55;
+        if (/cp\.aspx\?n=412/.test(url)) return -80;
+        if (/health\.ntpc\.gov\.tw\/basic/.test(url)) return -70;
+        return 0;
+      };
+
       const scoreItem = (item, kind, tokenSets, rawQuery) => {
         const fields = fieldsFor(item, kind).map(field => ({ ...field, text: normalize(asText(field.value)) }));
         const matchedPhrases = [];
-        let score = 0;
+        let score = kind === 'interpretation' ? sourceQuality(item) : 0;
         let coverage = 0;
 
         tokenSets.forEach(alternatives => {
@@ -704,13 +721,23 @@
         if (!url) return '';
         const sourceText = asText(item.status || item.agency || item.sourceName || item.sourceTitle);
         const isTaoyuanIndex = /桃園/.test(sourceText) || url.includes('care.tycg.gov.tw') || url.includes('ws.tycg.gov.tw');
-        const label = isTaoyuanIndex ? '開啟此函釋／附件' : '查看官方或政府公開來源';
+        const isTaoyuanArchive = url.includes('care.tycg.gov.tw/cp.aspx?n=412');
+        const isNewTaipeiArchive = url.includes('health.ntpc.gov.tw/basic/');
+        const isTaichung = url.includes('health.taichung.gov.tw');
+        const isDirectFile = /\.(pdf|doc|docx|odt)(?:$|[?#])/i.test(url);
+        const label = isDirectFile
+          ? '直接開啟官方附件'
+          : (isTaichung
+            ? '開啟台中單篇公告（內含附件）'
+            : (isTaoyuanArchive
+              ? '開啟桃園函釋專區'
+              : (isNewTaipeiArchive ? '開啟新北函釋彙整頁' : (isTaoyuanIndex ? '開啟此函釋／附件' : '查看官方或政府公開來源'))));
         const archiveUrl = isTaoyuanIndex && !url.includes('cp.aspx?n=412')
           ? '<a class="source-link secondary" href="https://care.tycg.gov.tw/cp.aspx?n=412" target="_blank" rel="noopener noreferrer">查看桃園函釋彙整頁 <span aria-hidden="true">↗</span></a>'
           : '';
         const alternate = safeUrl(item.alternateSource);
         const alternateLink = alternate && alternate !== url
-          ? `<a class="source-link secondary" href="${escapeHtml(alternate)}" target="_blank" rel="noopener noreferrer">查看備用來源 <span aria-hidden="true">↗</span></a>`
+          ? `<a class="source-link secondary" href="${escapeHtml(alternate)}" target="_blank" rel="noopener noreferrer">查看官方公告頁 <span aria-hidden="true">↗</span></a>`
           : '';
         return `<a class="source-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span></a>${archiveUrl}${alternateLink}`;
       };
@@ -933,9 +960,8 @@
         });
       };
       const syncedAt = formatSyncTime(SYNC_META.syncedAt);
-      syncStatus.textContent = syncedAt
-        ? `函釋資料由衛生福利部法規檢索系統定期同步；最後成功同步：${syncedAt}，共 ${INTERPRETATION_ROWS.length} 筆。`
-        : `目前載入 ${INTERPRETATION_ROWS.length} 筆函釋起始資料；啟用 GitHub 排程後會定期同步衛生福利部法規檢索系統。`;
+      const sourceMode = asText(SYNC_META.mode) || '政府公開資料靜態整理';
+      syncStatus.textContent = `目前載入 ${INTERPRETATION_ROWS.length} 筆函釋；${sourceMode}${syncedAt ? `，整理日期：${syncedAt}` : ''}。搜尋本身不連線、不使用 AI Token。`;
 
       try {
         q.value = new URL(location.href).searchParams.get('q') || '';
