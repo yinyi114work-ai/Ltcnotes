@@ -719,27 +719,11 @@
       const renderSourceLink = item => {
         const url = safeUrl(item.source || item.sourceUrl || item.url);
         if (!url) return '';
-        const sourceText = asText(item.status || item.agency || item.sourceName || item.sourceTitle);
-        const isTaoyuanIndex = /桃園/.test(sourceText) || url.includes('care.tycg.gov.tw') || url.includes('ws.tycg.gov.tw');
-        const isTaoyuanArchive = url.includes('care.tycg.gov.tw/cp.aspx?n=412');
-        const isNewTaipeiArchive = url.includes('health.ntpc.gov.tw/basic/');
-        const isTaichung = url.includes('health.taichung.gov.tw');
-        const isDirectFile = /\.(pdf|doc|docx|odt)(?:$|[?#])/i.test(url);
-        const label = isDirectFile
-          ? '直接開啟官方附件'
-          : (isTaichung
-            ? '開啟台中單篇公告（內含附件）'
-            : (isTaoyuanArchive
-              ? '開啟桃園函釋專區'
-              : (isNewTaipeiArchive ? '開啟新北函釋彙整頁' : (isTaoyuanIndex ? '開啟此函釋／附件' : '查看官方或政府公開來源'))));
-        const archiveUrl = isTaoyuanIndex && !url.includes('cp.aspx?n=412')
-          ? '<a class="source-link secondary" href="https://care.tycg.gov.tw/cp.aspx?n=412" target="_blank" rel="noopener noreferrer">查看桃園函釋彙整頁 <span aria-hidden="true">↗</span></a>'
-          : '';
         const alternate = safeUrl(item.alternateSource);
         const alternateLink = alternate && alternate !== url
-          ? `<a class="source-link secondary" href="${escapeHtml(alternate)}" target="_blank" rel="noopener noreferrer">查看官方公告頁 <span aria-hidden="true">↗</span></a>`
+          ? `<a class="source-link secondary" href="${escapeHtml(alternate)}" target="_blank" rel="noopener noreferrer">點開全文（備用連結） <span aria-hidden="true">↗</span></a>`
           : '';
-        return `<a class="source-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span></a>${archiveUrl}${alternateLink}`;
+        return `<a class="source-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">點開全文 <span aria-hidden="true">↗</span></a>${alternateLink}`;
       };
 
       const renderCodeCard = (result, tokenSets) => {

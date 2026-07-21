@@ -50,6 +50,7 @@ DEFAULT_SEARCH_URL = (
     "kw=%E9%95%B7%E6%9C%9F%E7%85%A7%E9%A1%A7&kw2=&kw3=&kw4=&"
     "valid=3&type=etype_"
 )
+DEFAULT_FALLBACK_SEARCH_URL = "https://www.health.taichung.gov.tw/26198/1614263/1617520/1617525/1617526"
 USER_AGENT = (
     "LongcareNotesPublicLawSearch/1.0 "
     "(+https://github.com/yinyi114work-ai/Ltcnotes; public-interest archive)"
@@ -67,6 +68,7 @@ TOTAL_PATTERNS = [
 DATE_PATTERNS = [
     re.compile(r"(?:發文日期|日期|公布日期)\s*[：:]?\s*(?:民國)?\s*(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日"),
     re.compile(r"(?:發文日期|日期|公布日期)\s*[：:]?\s*(\d{2,3})[./-](\d{1,2})[./-](\d{1,2})"),
+    re.compile(r"(?:發布日期|最後異動日期|上版日期)\s*[：:]?\s*(\d{4})[./-](\d{1,2})[./-](\d{1,2})"),
 ]
 DOC_PATTERNS = [
     re.compile(r"(?:發文字號|文號)\s*[：:]?\s*([^\n]{1,50}?字\s*第?\s*[A-Za-z0-9-]+\s*號)"),
@@ -312,6 +314,12 @@ def extract_codes(text: str, known_codes: dict[str, str]) -> list[str]:
     return unique(output)
 
 
+def looks_like_ltc_interpretation_text(text: str, known_codes: dict[str, str]) -> bool:
+    if extract_codes(text, known_codes):
+        return True
+    return re.search(r"衛生福利部|衛福部|函釋|長期照顧|長照|給付|支付|G碼|代購|喘息|輔具|附件", text, re.I) is not None
+
+
 def extract_total(text: str) -> int | None:
     for pattern in TOTAL_PATTERNS:
         match = pattern.search(text)
@@ -324,18 +332,58 @@ def same_mohw_host(url: str, base_url: str) -> bool:
     return urlparse(url).netloc.lower() == urlparse(base_url).netloc.lower()
 
 
+def is_taoyuan_care_url(url: str) -> bool:
+    host = urlparse(url).netloc.lower()
+    return host.endswith("care.tycg.gov.tw") or host.endswith("ws.tycg.gov.tw")
+
+
+def is_taichung_health_url(url: str) -> bool:
+    return urlparse(url).netloc.lower().endswith("health.taichung.gov.tw")
+
+
+def is_taichung_post_url(url: str) -> bool:
+    return is_taichung_health_url(url) and re.fullmatch(r"/\d+/post", urlparse(url).path) is not None
+
+
 def canonical_url(url: str) -> str:
     parsed = urlparse(url)
     query = urlencode(sorted(parse_qsl(parsed.query, keep_blank_values=True)))
     return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path, "", query, ""))
 
 
-def enumerate_detail_urls(search_page: FetchedPage, search_url: str, maximum: int) -> list[str]:
+def enumerate_detail_urls(search_page: FetchedPage, search_url: str, maximum: int, fetcher: Fetcher | None = None) -> list[str]:
     candidates: list[str] = []
     for href, _label in search_page.parser.links:
         absolute = urljoin(search_page.url, html.unescape(href))
         if DETAIL_PAGE_RE.search(urlparse(absolute).path) and same_mohw_host(absolute, search_url):
             candidates.append(absolute)
+        if is_taoyuan_care_url(search_url) and is_taoyuan_care_url(absolute):
+            label = compact_space(_label)
+            if label:
+                candidates.append(absolute)
+        if is_taichung_health_url(search_url) and is_taichung_post_url(absolute):
+            candidates.append(absolute)
+
+    if is_taichung_health_url(search_url) and fetcher:
+        page_urls: list[str] = []
+        for href, label in search_page.parser.links:
+            absolute = urljoin(search_page.url, html.unescape(href))
+            if not is_taichung_health_url(absolute):
+                continue
+            if re.fullmatch(r"\d+|下一頁|最後一頁", compact_space(label)):
+                page_urls.append(absolute)
+        for page_url in unique(page_urls):
+            if canonical_url(page_url) == canonical_url(search_page.url):
+                continue
+            try:
+                page = fetcher.get(page_url)
+            except (OSError, HTTPError, URLError, TimeoutError, ValueError) as error:
+                print(f"Warning: could not fetch Taichung list page {page_url}: {error}", file=sys.stderr)
+                continue
+            for href, _label in page.parser.links:
+                absolute = urljoin(page.url, html.unescape(href))
+                if is_taichung_post_url(absolute):
+                    candidates.append(absolute)
 
     # Some ASP.NET pages place navigation URLs in JavaScript rather than anchors.
     for match in re.findall(r"(?:https?://[^\"'<>\s]+|FINTQRY0[45]\.aspx\?[^\"'<>\s]+)", search_page.source, re.I):
@@ -348,13 +396,14 @@ def enumerate_detail_urls(search_page: FetchedPage, search_url: str, maximum: in
         if total < 1:
             return []
         if total > maximum:
-            raise RuntimeError(f"MOHW search reports {total} records, above safety maximum {maximum}")
-        parsed = urlparse(search_url)
-        query_pairs = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True) if key.lower() != "rowno"]
-        detail_path = QUERY_PAGE_RE.sub("FINTQRY04.aspx", parsed.path)
-        for row_number in range(1, total + 1):
-            query = urlencode([*query_pairs, ("RowNo", str(row_number))])
-            candidates.append(urlunparse((parsed.scheme, parsed.netloc, detail_path, "", query, "")))
+            raise RuntimeError(f"Search page reports {total} records, above safety maximum {maximum}")
+        if QUERY_PAGE_RE.search(urlparse(search_url).path):
+            parsed = urlparse(search_url)
+            query_pairs = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True) if key.lower() != "rowno"]
+            detail_path = QUERY_PAGE_RE.sub("FINTQRY04.aspx", parsed.path)
+            for row_number in range(1, total + 1):
+                query = urlencode([*query_pairs, ("RowNo", str(row_number))])
+                candidates.append(urlunparse((parsed.scheme, parsed.netloc, detail_path, "", query, "")))
 
     deduped: list[str] = []
     seen: set[str] = set()
@@ -368,7 +417,10 @@ def enumerate_detail_urls(search_page: FetchedPage, search_url: str, maximum: in
 
 
 def roc_date_from_parts(year: str, month: str, day: str) -> str:
-    return f"{int(year):03d}-{int(month):02d}-{int(day):02d}"
+    year_number = int(year)
+    if year_number >= 1912:
+        year_number -= 1911
+    return f"{year_number:03d}-{int(month):02d}-{int(day):02d}"
 
 
 def extract_date(text: str, source_url: str) -> str:
@@ -483,6 +535,16 @@ def parse_interpretation(page: FetchedPage, known_codes: dict[str, str]) -> dict
     summary_source = re.sub(r"\s+", " ", title if title and title != doc_number else raw)
     summary = summary_source[:360] + ("…" if len(summary_source) > 360 else "")
     keywords = " ".join(unique([*codes, doc_number, title]))
+    if is_taoyuan_care_url(page.url):
+        status = "桃園市政府衛生局衛生福利部函釋專區索引"
+        agency = "桃園市政府衛生局／衛生福利部函釋轉知"
+    elif is_taichung_health_url(page.url):
+        status = "臺中市政府衛生局長照特約單位解釋函整理"
+        agency = "臺中市政府衛生局／衛生福利部函釋轉知"
+    else:
+        status = "衛福部法規檢索系統函釋"
+        agency = "衛生福利部"
+
     return {
         "id": record_id(doc_number, page.url),
         "codes": codes,
@@ -492,10 +554,41 @@ def parse_interpretation(page: FetchedPage, known_codes: dict[str, str]) -> dict
         "summary": summary,
         "raw": raw,
         "source": page.url,
-        "status": "衛福部法規檢索系統函釋",
+        "status": status,
         "keywords": keywords,
-        "agency": "衛生福利部",
+        "agency": agency,
     }
+
+
+def parse_taoyuan_index_records(page: FetchedPage, known_codes: dict[str, str]) -> list[dict[str, object]]:
+    records: list[dict[str, object]] = []
+    for href, label in page.parser.links:
+        title = compact_space(label)
+        if not title:
+            continue
+        if not looks_like_ltc_interpretation_text(title, known_codes):
+            continue
+        source_url = urljoin(page.url, html.unescape(href))
+        if not is_taoyuan_care_url(source_url):
+            continue
+        doc_number = extract_doc_number(title, source_url)
+        date = extract_date(title, source_url)
+        codes = extract_codes(title, known_codes)
+        keywords = " ".join(unique([*codes, doc_number, title]))
+        records.append({
+            "id": record_id(doc_number, source_url),
+            "codes": codes,
+            "date": date,
+            "docNo": doc_number,
+            "title": title,
+            "summary": title,
+            "raw": title,
+            "source": source_url,
+            "status": "桃園市政府衛生局衛生福利部函釋專區索引",
+            "keywords": keywords,
+            "agency": "桃園市政府衛生局／衛生福利部函釋轉知",
+        })
+    return list({record_key(item): item for item in records}.values())
 
 
 def merge_curated(
@@ -559,26 +652,30 @@ def synchronize(args: argparse.Namespace) -> tuple[int, int]:
 
     search_page = fetcher.get(args.search_url)
     reported_total = extract_total("\n".join(search_page.parser.lines))
-    detail_urls = enumerate_detail_urls(search_page, args.search_url, args.maximum_records)
-    if not detail_urls:
-        raise RuntimeError("No MOHW interpretation result links were found; existing data was not changed")
-
     known_codes = load_known_codes(data_path)
     if not known_codes:
         raise RuntimeError(f"No known long-term-care codes could be loaded from {data_path}")
 
     scraped_by_key: dict[str, dict[str, object]] = {}
     failures: list[str] = []
-    for index, url in enumerate(detail_urls, start=1):
-        try:
-            page = fetcher.get(url)
-            record = parse_interpretation(page, known_codes)
-            if record:
-                scraped_by_key[record_key(record)] = record
-            else:
-                failures.append(f"{index}: page did not contain a valid interpretation ({url})")
-        except (OSError, HTTPError, URLError, TimeoutError, ValueError) as error:
-            failures.append(f"{index}: {error} ({url})")
+    if is_taoyuan_care_url(args.search_url):
+        for record in parse_taoyuan_index_records(search_page, known_codes):
+            scraped_by_key[record_key(record)] = record
+    else:
+        detail_urls = enumerate_detail_urls(search_page, args.search_url, args.maximum_records, fetcher)
+        if not detail_urls:
+            raise RuntimeError("No interpretation result links were found; existing data was not changed")
+
+        for index, url in enumerate(detail_urls, start=1):
+            try:
+                page = fetcher.get(url)
+                record = parse_interpretation(page, known_codes)
+                if record:
+                    scraped_by_key[record_key(record)] = record
+                else:
+                    failures.append(f"{index}: page did not contain a valid interpretation ({url})")
+            except (OSError, HTTPError, URLError, TimeoutError, ValueError) as error:
+                failures.append(f"{index}: {error} ({url})")
 
     scraped = list(scraped_by_key.values())
     existing_value = load_js_value(existing_path, "INTERPRETATIONS", [])
@@ -610,7 +707,15 @@ def synchronize(args: argparse.Namespace) -> tuple[int, int]:
         "scrapedCount": len(scraped),
         "reportedCount": reported_total,
         "count": len(records),
-        "mode": "衛生福利部法規檢索系統自動同步",
+        "mode": (
+            "桃園市政府衛生局衛生福利部函釋專區自動同步"
+            if is_taoyuan_care_url(args.search_url)
+            else (
+                "臺中市政府衛生局長照特約單位解釋函自動同步"
+                if is_taichung_health_url(args.search_url)
+                else "衛生福利部法規檢索系統自動同步"
+            )
+        ),
         "failedPages": len(failures),
     }
     write_atomic(output_path, meta, records)
@@ -625,6 +730,7 @@ def synchronize(args: argparse.Namespace) -> tuple[int, int]:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--search-url", default=DEFAULT_SEARCH_URL)
+    parser.add_argument("--fallback-search-url", default=DEFAULT_FALLBACK_SEARCH_URL)
     parser.add_argument("--output", type=Path, default=Path("law/interpretations.js"))
     parser.add_argument("--existing", type=Path, default=None)
     parser.add_argument("--code-data", type=Path, default=Path("law/data.js"))
@@ -642,8 +748,17 @@ def main() -> int:
     try:
         scraped_count, total_count = synchronize(args)
     except Exception as error:
-        print(f"MOHW synchronization failed: {error}", file=sys.stderr)
-        return 1
+        if not args.fallback_search_url or args.search_url == args.fallback_search_url:
+            print(f"Interpretation synchronization failed: {error}", file=sys.stderr)
+            return 1
+        print(f"Primary MOHW synchronization failed: {error}", file=sys.stderr)
+        print(f"Trying fallback source: {args.fallback_search_url}", file=sys.stderr)
+        args.search_url = args.fallback_search_url
+        try:
+            scraped_count, total_count = synchronize(args)
+        except Exception as fallback_error:
+            print(f"Fallback interpretation synchronization failed: {fallback_error}", file=sys.stderr)
+            return 1
     print(f"MOHW synchronization complete: {scraped_count} scraped, {total_count} total records")
     return 0
 
