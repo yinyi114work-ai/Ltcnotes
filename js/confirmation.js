@@ -1,6 +1,32 @@
-// ===== 服務確認單與每週服務安排 =====
+// ===== 服務規劃三階段流程、每週安排與服務確認單 =====
 const CONFIRM_SETTINGS_KEY = 'longcareConfirmationSettingsV1';
 let confirmationSerial = 0;
+let currentWizardStep = 1;
+
+function goWizardStep(step){
+  const target = Number(step);
+  if(target === 2 && !getCurrentFeeServices().length){
+    showToast('請先新增至少一項核定服務');
+    return;
+  }
+
+  currentWizardStep = target;
+  document.querySelectorAll('[data-wizard-panel]').forEach(panel=>{
+    panel.classList.toggle('active', Number(panel.dataset.wizardPanel) === target);
+  });
+  document.querySelectorAll('[data-wizard-step]').forEach(button=>{
+    const buttonStep = Number(button.dataset.wizardStep);
+    button.classList.toggle('active', buttonStep === target);
+    button.classList.toggle('completed', buttonStep < target);
+  });
+
+  if(target === 2){
+    renderApprovedServiceSummary();
+    refreshScheduleServiceOptions();
+  }
+
+  document.querySelector('#feeTool .service-wizard')?.scrollIntoView({behavior:'smooth', block:'start'});
+}
 
 function getCurrentFeeServices(){
   return Array.from(document.querySelectorAll('#feeRows .fee-row')).map((row, index)=>{
@@ -9,6 +35,15 @@ function getCurrentFeeServices(){
     const svc = serviceData.find(item=>item.code === code);
     return svc ? {index, code, count, svc} : null;
   }).filter(Boolean);
+}
+
+function renderApprovedServiceSummary(){
+  const target = $('approvedServiceSummary');
+  if(!target) return;
+  const services = getCurrentFeeServices();
+  target.innerHTML = services.length
+    ? services.map(({code, count, svc})=>`<span class="approved-service-chip"><strong>${escapeHtml(code)}</strong>${escapeHtml(svc.name)}｜每月 ${money(count)} 次</span>`).join('')
+    : '<span class="empty-state-text">尚未新增核定服務。</span>';
 }
 
 function saveConfirmationSettings(){
@@ -37,12 +72,12 @@ function loadConfirmationSettings(){
 function scheduleServiceOptionsHtml(selectedCodes = []){
   const services = getCurrentFeeServices();
   if(!services.length){
-    return '<p class="schedule-empty-service">請先在上方新增服務碼別。</p>';
+    return '<p class="schedule-empty-service">請先回到第一階段新增核定服務。</p>';
   }
   return services.map(({code, svc})=>`
     <label class="schedule-service-option">
       <input type="checkbox" value="${code}" ${selectedCodes.includes(code) ? 'checked' : ''}>
-      <span>${code} ${svc.name}</span>
+      <span>${code} ${escapeHtml(svc.name)}</span>
     </label>
   `).join('');
 }
@@ -51,6 +86,7 @@ function addScheduleRow(data = {}){
   const row = document.createElement('div');
   row.className = 'schedule-row';
   row.innerHTML = `
+    <div class="schedule-row-title">服務安排</div>
     <div class="schedule-days" aria-label="服務頻率">
       ${['一','二','三','四','五','六','日'].map((day, idx)=>`
         <label class="day-check">
@@ -79,6 +115,7 @@ function refreshScheduleServiceOptions(){
     const selected = Array.from(row.querySelectorAll('.schedule-service-options input:checked')).map(x=>x.value);
     row.querySelector('.schedule-service-options').innerHTML = scheduleServiceOptionsHtml(selected);
   });
+  renderApprovedServiceSummary();
 }
 
 function getScheduleData(){
@@ -125,7 +162,7 @@ function makeConfirmationNumber(){
 function buildConfirmationDocument(){
   const feeServices = getCurrentFeeServices();
   if(!feeServices.length){
-    showToast('請先新增至少一項服務碼別');
+    showToast('請先新增至少一項核定服務');
     return false;
   }
 
@@ -135,7 +172,6 @@ function buildConfirmationDocument(){
 
   const serviceRows = feeServices.map(({code, count, svc})=>{
     const subtotal = svc.price * count;
-    const selfPay = Math.floor(Math.min(subtotal, Math.max(quota - total, 0)) * rate);
     total += subtotal;
     return `
       <tr>
@@ -144,7 +180,6 @@ function buildConfirmationDocument(){
         <td>${money(svc.price)}</td>
         <td>${money(count)}</td>
         <td>${money(subtotal)}</td>
-        <td>${money(selfPay)}</td>
       </tr>`;
   }).join('');
 
@@ -162,12 +197,7 @@ function buildConfirmationDocument(){
       <td class="text-left">${escapeHtml(item.codes.length ? item.codes.join('＋') : '未填寫')}</td>
     </tr>
   `).join('') : `
-    <tr class="blank-schedule-row">
-      <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-    </tr>
-    <tr class="blank-schedule-row">
-      <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-    </tr>`;
+    <tr class="blank-schedule-row"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;
 
   const cmsText = `CMS ${$('feeCms').value}`;
   const identityText = identityRates[$('feeIdentity').value]?.label || '';
@@ -198,12 +228,19 @@ function buildConfirmationDocument(){
       <div><strong>聯絡資訊</strong><span>${escapeHtml([v('confirmPhone'), v('confirmEmail')].filter(Boolean).join('／') || '________________')}</span></div>
     </section>
 
-    <h2 class="confirm-section-title">一、每月服務內容與費用預估</h2>
+    <h2 class="confirm-section-title">一、核定服務內容</h2>
     <table class="confirm-table">
-      <thead><tr><th>碼別</th><th>服務項目</th><th>單價</th><th>預計次數</th><th>預估使用額度</th><th>預估部分負擔</th></tr></thead>
+      <thead><tr><th>碼別</th><th>服務項目</th><th>單價</th><th>每月核定次數</th><th>預估使用額度</th></tr></thead>
       <tbody>${serviceRows}</tbody>
     </table>
 
+    <h2 class="confirm-section-title">二、每週預計服務安排</h2>
+    <table class="confirm-table schedule-confirm-table">
+      <thead><tr><th>服務頻率</th><th>服務時間</th><th>服務項目</th></tr></thead>
+      <tbody>${scheduleRows}</tbody>
+    </table>
+
+    <h2 class="confirm-section-title">三、費用摘要</h2>
     <section class="confirm-summary-grid">
       <div><span>CMS 可用額度</span><strong>NT$ ${money(quota)}</strong></div>
       <div><span>預估使用額度</span><strong>NT$ ${money(total)}</strong></div>
@@ -213,28 +250,15 @@ function buildConfirmationDocument(){
       <div class="confirm-total"><span>預估自付總額</span><strong>NT$ ${money(clientTotal)}</strong></div>
     </section>
 
-    <h2 class="confirm-section-title">二、每週預計服務安排</h2>
-    <table class="confirm-table schedule-confirm-table">
-      <thead><tr><th>服務頻率</th><th>服務時間</th><th>服務項目</th></tr></thead>
-      <tbody>${scheduleRows}</tbody>
-    </table>
+    <p class="confirm-single-note">本確認單僅供服務內容及費用預估使用，實際仍依核定照顧計畫、當月實際服務紀錄及最新規定辦理。</p>
 
-    <section class="confirm-notes">
-      <strong>說明：</strong>
-      <ol>
-        <li>本確認單依目前服務規劃及使用者輸入內容進行費用預估。</li>
-        <li>實際服務內容、次數及費用，仍依核定照顧計畫、當月實際服務紀錄及最新規定計算。</li>
-        <li>服務時段得依個案需求、居服員排班及雙方協議調整。</li>
-      </ol>
-    </section>
-
-    <section class="confirm-signatures">
+    <section class="confirm-signatures compact-signatures">
       <div><span>個案／家屬簽名</span><b></b></div>
       <div><span>居家督導員簽名</span><b></b></div>
       <div><span>確認日期</span><b>　　　年　　　月　　　日</b></div>
     </section>
 
-    <footer class="confirm-doc-footer">
+    <footer class="confirm-doc-footer compact-footer">
       <img src="logo.png" alt="" class="confirm-footer-logo">
       <div>
         <strong>Longcare.Notes｜長照研究室</strong>
@@ -266,7 +290,7 @@ function printConfirmation(){
   }
   document.body.classList.add('printing-confirmation');
   window.print();
-  setTimeout(()=>document.body.classList.remove('printing-confirmation'), 500);
+  setTimeout(()=>document.body.classList.remove('printing-confirmation'), 800);
 }
 
 function initConfirmationTool(){
@@ -276,6 +300,13 @@ function initConfirmationTool(){
   const today = todayStr();
   if($('confirmStartDate') && !$('confirmStartDate').value) $('confirmStartDate').value = today;
 
+  document.querySelectorAll('[data-go-step]').forEach(button=>{
+    button.addEventListener('click', ()=>goWizardStep(button.dataset.goStep));
+  });
+  document.querySelectorAll('[data-wizard-step]').forEach(button=>{
+    button.addEventListener('click', ()=>goWizardStep(button.dataset.wizardStep));
+  });
+
   $('saveConfirmSettings')?.addEventListener('click', saveConfirmationSettings);
   $('addScheduleRow')?.addEventListener('click', ()=>addScheduleRow());
   $('previewConfirmation')?.addEventListener('click', openConfirmationPreview);
@@ -283,5 +314,7 @@ function initConfirmationTool(){
   $('closeConfirmationPreview')?.addEventListener('click', closeConfirmationPreview);
   $('printConfirmationFromPreview')?.addEventListener('click', printConfirmation);
 
-  addScheduleRow();
+  if(!$('scheduleRows').children.length) addScheduleRow();
+  renderApprovedServiceSummary();
+  goWizardStep(1);
 }

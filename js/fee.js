@@ -8,7 +8,7 @@ function addFeeRow(code='BA07', count=1){
   `;
   wrap.querySelector('.fee-code').value = code;
   wrap.querySelector('.fee-code').addEventListener('change', ()=>{ updateFee(); if(typeof refreshScheduleServiceOptions === 'function') refreshScheduleServiceOptions(); });
-  wrap.querySelector('.fee-count').addEventListener('input', updateFee);
+  wrap.querySelector('.fee-count').addEventListener('input', ()=>{ updateFee(); if(typeof refreshScheduleServiceOptions === 'function') refreshScheduleServiceOptions(); });
   wrap.querySelector('.remove-row').addEventListener('click',()=>{wrap.remove();updateFee();if(typeof refreshScheduleServiceOptions === 'function') refreshScheduleServiceOptions();});
   $('feeRows').prepend(wrap);
   wrap.querySelector('.fee-code').focus();
