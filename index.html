@@ -112,6 +112,7 @@
 
 
   <nav class="tool-tabs">
+    <button class="tab-btn" data-target="supervisorTool">居督工作台</button>
     <button class="tab-btn active" data-target="quotaTool">額度計算器</button>
     <button class="tab-btn" data-target="codeTool">碼別介紹</button>
     <button class="tab-btn" data-target="feeTool">服務費用預估</button>
@@ -121,6 +122,100 @@
   </nav>
 
   <main class="container">
+    <section id="supervisorTool" class="tool-section">
+      <div class="section-title supervisor-section-title">
+        <div>
+          <h2>居督工作台</h2>
+          <p>待辦事項依緊急程度與日期自動排序；資料僅儲存在目前裝置的瀏覽器。</p>
+        </div>
+        <div class="supervisor-header-actions">
+          <button id="supervisorShowAll" class="secondary-btn" type="button">顯示全部</button>
+          <button id="supervisorAddTask" class="primary-btn" type="button">＋新增待辦</button>
+        </div>
+      </div>
+
+      <div class="supervisor-dashboard">
+        <div class="supervisor-task-panel">
+          <div id="supervisorStats" class="supervisor-stats"></div>
+
+          <div id="supervisorTaskForm" class="card supervisor-task-form" hidden>
+            <div class="supervisor-form-heading">
+              <h3 id="supervisorFormTitle">新增待辦</h3>
+              <button id="supervisorCloseForm" class="icon-btn" type="button" aria-label="關閉新增待辦">×</button>
+            </div>
+            <input id="supervisorTaskId" type="hidden">
+            <div class="grid-2">
+              <label>事項類型
+                <select id="supervisorTaskType">
+                  <option value="shift">找代班</option>
+                  <option value="medical">陪同就醫人力</option>
+                  <option value="supervision">居服員個督</option>
+                  <option value="homevisit">家訪</option>
+                  <option value="phonevisit">電訪</option>
+                  <option value="mutation">異動通報</option>
+                  <option value="meeting">會議紀錄</option>
+                  <option value="discussion">個案討論</option>
+                  <option value="callback">回電</option>
+                  <option value="other">其他</option>
+                </select>
+              </label>
+              <label>個案／事項名稱
+                <input id="supervisorTaskSubject" maxlength="60" placeholder="例如：王阿姨、八月聯繫會議">
+              </label>
+              <label>日期<input id="supervisorTaskDate" type="date"></label>
+              <label>時間<input id="supervisorTaskTime" type="time"></label>
+              <label>緊急程度
+                <select id="supervisorTaskPriority">
+                  <option value="urgent">急</option>
+                  <option value="normal" selected>一般</option>
+                  <option value="low">不急</option>
+                </select>
+              </label>
+              <label>狀態
+                <select id="supervisorTaskStatus">
+                  <option value="pending">待處理</option>
+                  <option value="progress">處理中</option>
+                  <option value="done">已完成</option>
+                </select>
+              </label>
+            </div>
+            <label>備註<textarea id="supervisorTaskNote" maxlength="300" placeholder="例如：原居服員請假、BA14、需輪椅交通安排"></textarea></label>
+            <div class="button-row">
+              <button id="supervisorSaveTask" class="primary-btn" type="button">儲存待辦</button>
+              <button id="supervisorCancelTask" class="ghost-btn" type="button">取消</button>
+            </div>
+          </div>
+
+          <div class="supervisor-list-toolbar">
+            <div>
+              <strong id="supervisorListTitle">全部待辦</strong>
+              <span id="supervisorSelectedDateLabel"></span>
+            </div>
+            <label class="supervisor-completed-toggle"><input id="supervisorShowCompleted" type="checkbox"> 顯示已完成</label>
+          </div>
+          <div id="supervisorTaskList" class="supervisor-task-list"></div>
+        </div>
+
+        <aside class="calendar-card">
+          <div class="calendar-header">
+            <button id="calendarPrev" class="icon-btn" type="button" aria-label="上個月">‹</button>
+            <h3 id="calendarTitle"></h3>
+            <button id="calendarNext" class="icon-btn" type="button" aria-label="下個月">›</button>
+          </div>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div id="supervisorCalendar" class="supervisor-calendar"></div>
+          <div class="calendar-legend">
+            <span><i class="legend-dot urgent"></i>急</span>
+            <span><i class="legend-dot normal"></i>一般</span>
+            <span><i class="legend-dot low"></i>不急</span>
+          </div>
+          <p class="small-note">點選日期可只查看當日事項；再次按「顯示全部」即可回到完整清單。</p>
+        </aside>
+      </div>
+    </section>
+
     <section id="quotaTool" class="tool-section active">
       <div class="section-title">
         <h2>額度計算器</h2>
@@ -391,6 +486,7 @@
   <script src="js/visit.js"></script>
   <script src="js/mutation.js"></script>
   <script src="js/renewal.js"></script>
+  <script src="js/supervisor.js"></script>
   <script src="js/app.js"></script>
 
   <script>
