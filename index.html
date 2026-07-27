@@ -262,63 +262,130 @@
 
     <section id="feeTool" class="tool-section">
       <div class="section-title">
-        <h2>服務費用預估</h2>
-        <p>依照開立碼別與每月次數，預估個案每月自付金額；超出 CMS 額度部分以全額自費計算。</p>
-      </div>
-      <div class="card grid-3">
-        <label>CMS 等級<select id="feeCms"></select></label>
-        <label>身分別<select id="feeIdentity"></select></label>
-        <div class="align-end"><button id="addFeeRow" class="primary-btn" type="button">＋新增碼別</button></div>
+        <h2>服務規劃</h2>
+        <p>依實際需求分三個階段使用：先試算服務金額，需要時再安排服務型態，最後才產生服務確認單。</p>
       </div>
 
-      <details class="visit-block confirmation-settings">
-        <summary>服務確認單基本資料</summary>
-        <p class="hint-text">居家服務單位、居家督導員及聯絡電話可儲存在目前瀏覽器；個案姓名不會自動保存。</p>
-        <div class="grid-2">
-          <label>個案姓名／代號<input id="confirmClientName" placeholder="例如：王○○"></label>
-          <label>確認單類型
-            <select id="confirmVersionType">
-              <option>初次服務確認</option>
-              <option>服務調整確認</option>
-              <option>複評後確認</option>
-              <option>其他</option>
-            </select>
-          </label>
-          <label>服務起始日<input id="confirmStartDate" type="date"></label>
-          <label>服務結束日<input id="confirmEndDate" type="date"></label>
-          <label>居家服務單位<input id="confirmUnitName" placeholder="請輸入單位全名"></label>
-          <label>居家督導員<input id="confirmSupervisorName" placeholder="請輸入姓名"></label>
-          <label>聯絡電話<input id="confirmPhone" placeholder="例如：02-XXXXXXX"></label>
-          <label>電子郵件（選填）<input id="confirmEmail" type="email" placeholder="例如：service@example.com"></label>
+      <div class="service-wizard">
+        <div class="wizard-progress" aria-label="服務規劃流程">
+          <button class="wizard-step active" type="button" data-wizard-step="1">
+            <span>1</span><strong>服務試算</strong>
+          </button>
+          <div class="wizard-line"></div>
+          <button class="wizard-step" type="button" data-wizard-step="2">
+            <span>2</span><strong>安排服務</strong>
+          </button>
+          <div class="wizard-line"></div>
+          <button class="wizard-step" type="button" data-wizard-step="3">
+            <span>3</span><strong>服務確認單</strong>
+          </button>
         </div>
-        <div class="button-row">
-          <button id="saveConfirmSettings" class="secondary-btn" type="button">儲存居家單位資訊</button>
-        </div>
-      </details>
 
-      <div class="card service-schedule-card">
-        <div class="schedule-heading">
-          <div>
-            <h3 class="card-title">每週預計服務安排</h3>
-            <p class="hint-text">先在上方新增服務碼別，再新增時段；服務項目只會顯示已加入費用預估的碼別。</p>
+        <section class="wizard-panel active" data-wizard-panel="1">
+          <div class="wizard-panel-heading">
+            <div>
+              <h3>第一階段｜服務金額試算</h3>
+              <p>輸入已核定的服務碼別及每月次數，先確認使用額度與預估費用。</p>
+            </div>
           </div>
-          <button id="addScheduleRow" class="secondary-btn" type="button">＋新增服務時段</button>
-        </div>
-        <div id="scheduleRows" class="schedule-rows"></div>
-      </div>
-      <div id="feeRows" class="fee-rows"></div>
-      <div class="result-grid fee-result-grid">
-        <div class="result-card"><span>預估使用額度</span><strong id="feeTotal">0</strong></div>
-        <div class="result-card"><span>CMS可用額度</span><strong id="feeQuota">0</strong></div>
-        <div class="result-card"><span>部分負擔</span><strong id="feeSelfPay">0</strong></div>
-        <div class="result-card"><span>超額自費</span><strong id="feeOverage">0</strong></div>
-        <div class="result-card highlight-card"><span>預估自付總額</span><strong id="feeClientTotal">0</strong></div>
-        <div class="result-card"><span>剩餘額度</span><strong id="feeRemain">0</strong></div>
-      </div>
-      <div id="feeNotice" class="notice-card success">尚未超出 CMS 額度。</div>
-      <div class="button-row confirmation-actions">
-        <button id="previewConfirmation" class="primary-btn" type="button">預覽服務確認單</button>
-        <button id="printConfirmation" class="secondary-btn" type="button">列印／另存 PDF</button>
+
+          <div class="card grid-3">
+            <label>CMS 等級<select id="feeCms"></select></label>
+            <label>身分別<select id="feeIdentity"></select></label>
+            <div class="align-end"><button id="addFeeRow" class="primary-btn" type="button">＋新增核定碼別</button></div>
+          </div>
+
+          <div id="feeRows" class="fee-rows"></div>
+
+          <div class="result-grid fee-result-grid">
+            <div class="result-card"><span>預估使用額度</span><strong id="feeTotal">0</strong></div>
+            <div class="result-card"><span>CMS可用額度</span><strong id="feeQuota">0</strong></div>
+            <div class="result-card"><span>部分負擔</span><strong id="feeSelfPay">0</strong></div>
+            <div class="result-card"><span>超額自費</span><strong id="feeOverage">0</strong></div>
+            <div class="result-card highlight-card"><span>預估自付總額</span><strong id="feeClientTotal">0</strong></div>
+            <div class="result-card"><span>剩餘額度</span><strong id="feeRemain">0</strong></div>
+          </div>
+          <div id="feeNotice" class="notice-card success">尚未超出 CMS 額度。</div>
+
+          <div class="wizard-actions">
+            <span class="wizard-action-note">只需要試算時，可停在這一步。</span>
+            <button class="primary-btn" type="button" data-go-step="2">下一步：安排服務 →</button>
+          </div>
+        </section>
+
+        <section class="wizard-panel" data-wizard-panel="2">
+          <div class="wizard-panel-heading">
+            <div>
+              <h3>第二階段｜安排服務型態</h3>
+              <p>依第一階段已輸入的核定碼別，設定每週服務日、時間與服務項目。</p>
+            </div>
+          </div>
+
+          <div class="card approved-service-summary">
+            <h3 class="card-title">已核定服務</h3>
+            <div id="approvedServiceSummary" class="approved-service-chips"></div>
+          </div>
+
+          <div class="card service-schedule-card">
+            <div class="schedule-heading">
+              <div>
+                <h3 class="card-title">每週預計服務安排</h3>
+                <p class="hint-text">可建立多個時段；服務項目只會顯示第一階段已加入的碼別。</p>
+              </div>
+              <button id="addScheduleRow" class="secondary-btn" type="button">＋新增服務時段</button>
+            </div>
+            <div id="scheduleRows" class="schedule-rows"></div>
+          </div>
+
+          <div class="wizard-actions wizard-actions-between">
+            <button class="ghost-btn" type="button" data-go-step="1">← 回到服務試算</button>
+            <div>
+              <span class="wizard-action-note">只需要排班時，可停在這一步。</span>
+              <button class="primary-btn" type="button" data-go-step="3">下一步：服務確認單 →</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="wizard-panel" data-wizard-panel="3">
+          <div class="wizard-panel-heading">
+            <div>
+              <h3>第三階段｜產生服務確認單</h3>
+              <p>只有需要列印或另存 PDF 時，才填寫以下基本資料。</p>
+            </div>
+          </div>
+
+          <div class="card confirmation-settings-card">
+            <div class="grid-2">
+              <label>個案姓名／代號<input id="confirmClientName" placeholder="例如：王○○"></label>
+              <label>確認單類型
+                <select id="confirmVersionType">
+                  <option>初次服務確認</option>
+                  <option>服務調整確認</option>
+                  <option>複評後確認</option>
+                  <option>其他</option>
+                </select>
+              </label>
+              <label>服務起始日<input id="confirmStartDate" type="date"></label>
+              <label>服務結束日<input id="confirmEndDate" type="date"></label>
+              <label>居家服務單位<input id="confirmUnitName" placeholder="請輸入單位全名"></label>
+              <label>居家督導員<input id="confirmSupervisorName" placeholder="請輸入姓名"></label>
+              <label>聯絡電話<input id="confirmPhone" placeholder="例如：02-XXXXXXX"></label>
+              <label>電子郵件（選填）<input id="confirmEmail" type="email" placeholder="例如：service@example.com"></label>
+            </div>
+            <p class="hint-text">居家服務單位、居家督導員、聯絡電話及 Email 可儲存在目前瀏覽器；個案姓名不會自動保存。</p>
+            <div class="button-row">
+              <button id="saveConfirmSettings" class="secondary-btn" type="button">儲存居家單位資訊</button>
+            </div>
+          </div>
+
+          <div class="wizard-actions wizard-actions-between">
+            <button class="ghost-btn" type="button" data-go-step="2">← 回到安排服務</button>
+            <div class="button-row compact-button-row">
+              <button id="previewConfirmation" class="primary-btn" type="button">預覽服務確認單</button>
+              <button id="printConfirmation" class="secondary-btn" type="button">列印／另存 PDF</button>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
 
