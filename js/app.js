@@ -6,4 +6,5 @@ window.addEventListener('DOMContentLoaded',()=>{
   initVisitTool();
   initMutationTool();
   initRenewalTool();
+  initSupervisorTool();
 });

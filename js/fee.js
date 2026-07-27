@@ -10,7 +10,8 @@ function addFeeRow(code='BA07', count=1){
   wrap.querySelector('.fee-code').addEventListener('change', updateFee);
   wrap.querySelector('.fee-count').addEventListener('input', updateFee);
   wrap.querySelector('.remove-row').addEventListener('click',()=>{wrap.remove();updateFee();});
-  $('feeRows').appendChild(wrap);
+  $('feeRows').prepend(wrap);
+  wrap.querySelector('.fee-code').focus();
   updateFee();
 }
 
