@@ -1,1 +1,9 @@
-
+window.addEventListener('DOMContentLoaded',()=>{
+  initTabs();
+  initQuota();
+  initCodeTool();
+  initFeeTool();
+  initVisitTool();
+  initMutationTool();
+  initRenewalTool();
+});
