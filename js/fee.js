@@ -7,12 +7,13 @@ function addFeeRow(code='BA07', count=1){
     <button class="remove-row" type="button">刪除</button>
   `;
   wrap.querySelector('.fee-code').value = code;
-  wrap.querySelector('.fee-code').addEventListener('change', updateFee);
+  wrap.querySelector('.fee-code').addEventListener('change', ()=>{ updateFee(); if(typeof refreshScheduleServiceOptions === 'function') refreshScheduleServiceOptions(); });
   wrap.querySelector('.fee-count').addEventListener('input', updateFee);
-  wrap.querySelector('.remove-row').addEventListener('click',()=>{wrap.remove();updateFee();});
+  wrap.querySelector('.remove-row').addEventListener('click',()=>{wrap.remove();updateFee();if(typeof refreshScheduleServiceOptions === 'function') refreshScheduleServiceOptions();});
   $('feeRows').prepend(wrap);
   wrap.querySelector('.fee-code').focus();
   updateFee();
+  if(typeof refreshScheduleServiceOptions === 'function') refreshScheduleServiceOptions();
 }
 
 function updateFee(){

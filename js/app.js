@@ -7,7 +7,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     ['家訪', typeof initVisitTool === 'function' ? initVisitTool : null],
     ['異動', typeof initMutationTool === 'function' ? initMutationTool : null],
     ['換證', typeof initRenewalTool === 'function' ? initRenewalTool : null],
-    ['居督工作台', typeof initSupervisorTool === 'function' ? initSupervisorTool : null]
+    ['居督工作台', typeof initSupervisorTool === 'function' ? initSupervisorTool : null],
+    ['服務確認單', typeof initConfirmationTool === 'function' ? initConfirmationTool : null]
   ];
   initializers.forEach(([name, fn])=>{
     if(!fn) return;
