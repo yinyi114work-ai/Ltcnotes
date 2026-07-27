@@ -163,7 +163,8 @@
                 <input id="supervisorTaskSubject" maxlength="60" placeholder="例如：王阿姨、八月聯繫會議">
               </label>
               <label>日期<input id="supervisorTaskDate" type="date"></label>
-              <label>時間<input id="supervisorTaskTime" type="time"></label>
+              <label>開始時間<input id="supervisorTaskStartTime" type="time"></label>
+              <label>結束時間<input id="supervisorTaskEndTime" type="time"></label>
               <label>緊急程度
                 <select id="supervisorTaskPriority">
                   <option value="urgent">急</option>
@@ -174,9 +175,11 @@
               <label>狀態
                 <select id="supervisorTaskStatus">
                   <option value="pending">待處理</option>
-                  <option value="progress">處理中</option>
                   <option value="done">已完成</option>
                 </select>
+              </label>
+              <label class="grid-full">已詢問人員
+                <textarea id="supervisorTaskAsked" maxlength="500" placeholder="例如：王小美－無法、林佳怡－待回覆、陳阿華－可代班"></textarea>
               </label>
             </div>
             <label>備註<textarea id="supervisorTaskNote" maxlength="300" placeholder="例如：原居服員請假、BA14、需輪椅交通安排"></textarea></label>
@@ -213,6 +216,22 @@
           </div>
           <p class="small-note">點選日期可只查看當日事項；再次按「顯示全部」即可回到完整清單。</p>
         </aside>
+      </div>
+
+      <div id="supervisorCompleteModal" class="supervisor-modal" hidden>
+        <div class="supervisor-modal-backdrop" data-close-complete-modal></div>
+        <div class="supervisor-modal-card" role="dialog" aria-modal="true" aria-labelledby="supervisorCompleteTitle">
+          <h3 id="supervisorCompleteTitle">完成確認</h3>
+          <p id="supervisorCompleteSubject" class="hint-text"></p>
+          <input id="supervisorCompleteTaskId" type="hidden">
+          <label class="complete-check"><input id="supervisorScheduleCompleted" type="checkbox"> 已完成人力／排班安排</label>
+          <label class="complete-check"><input id="supervisorMutationIncluded" type="checkbox"> 已列入異動通報（代班／人力異動）</label>
+          <p class="small-note">可依實際情況勾選；儲存後待辦會標記為已完成。</p>
+          <div class="button-row">
+            <button id="supervisorConfirmComplete" class="primary-btn" type="button">確認完成</button>
+            <button id="supervisorCancelComplete" class="ghost-btn" type="button">取消</button>
+          </div>
+        </div>
       </div>
     </section>
 

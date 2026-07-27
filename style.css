@@ -220,3 +220,10 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
 .calendar-legend{display:flex;gap:14px;justify-content:center;margin-top:14px;color:var(--muted);font-size:12px}.calendar-legend span{display:flex;align-items:center;gap:5px}
 @media(max-width:900px){.supervisor-dashboard{grid-template-columns:1fr}.calendar-card{position:static}.supervisor-section-title{align-items:stretch;flex-direction:column}.supervisor-header-actions{display:grid;grid-template-columns:1fr 1fr}.supervisor-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.supervisor-stats{grid-template-columns:1fr}.supervisor-task{grid-template-columns:auto minmax(0,1fr)}.task-actions{grid-column:2;justify-content:flex-end}.supervisor-list-toolbar{align-items:flex-start;flex-direction:column}.calendar-day{min-height:48px;padding:6px 3px}.supervisor-header-actions{grid-template-columns:1fr}}
+
+/* Supervisor dashboard v1.1 */
+.grid-full{grid-column:1/-1}
+.task-asked{margin-top:10px;padding:10px 12px;border-radius:12px;background:#fff8ec;border:1px dashed var(--line);line-height:1.65;color:var(--ink);font-size:13px}
+.task-completion-note{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.task-completion-note span{font-size:12px;padding:5px 8px;border-radius:999px;background:#f2f7ee;color:#577449;border:1px solid #d7e6cf}
+.supervisor-modal[hidden]{display:none}.supervisor-modal{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px}.supervisor-modal-backdrop{position:absolute;inset:0;background:rgba(50,40,32,.45);backdrop-filter:blur(3px)}.supervisor-modal-card{position:relative;width:min(520px,100%);background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 18px 50px rgba(40,30,20,.25)}.supervisor-modal-card h3{margin:0 0 8px;color:var(--brand-dark)}.complete-check{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff;margin-top:10px}.complete-check input{width:auto;margin:0}
+@media(max-width:560px){.grid-full{grid-column:auto}.supervisor-modal-card{padding:18px}}
