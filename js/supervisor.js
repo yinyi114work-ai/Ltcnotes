@@ -401,6 +401,8 @@ function switchSupervisorView(view){
   $('supervisorAddCase').hidden=supervisorView!=='cases';
   $('supervisorImportCases').hidden=supervisorView!=='cases';
   $('supervisorDownloadTemplate').hidden=supervisorView!=='cases';
+  $('supervisorExportData').hidden=supervisorView!=='cases';
+  $('supervisorClearData').hidden=supervisorView!=='cases';
   if(supervisorView==='cases') renderSupervisorCases(); else renderSupervisorDashboard();
 }
 function mapSupervisorImportRow(row){
@@ -470,6 +472,66 @@ function downloadSupervisorTemplate(){
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='居督個案名單_空白範本.csv'; a.click(); URL.revokeObjectURL(url);
 }
 
+
+function supervisorExportRows(){
+  const rows=[];
+  supervisorCases.forEach(item=>{
+    const months=Object.keys(item.followups||{}).sort();
+    if(!months.length){
+      rows.push({
+        '個案姓名':item.name,'服務狀態':item.status==='active'?'服務中':item.status==='paused'?'暫停服務':'已結案',
+        '開始服務日':item.startDate||'','居服員':item.homeCareWorker||'','服務時間':item.serviceSchedule||'',
+        '最近家訪日':item.lastVisitDate||'','月份':'','家訪完成':'','電訪完成':'','排定家訪日期':'','排定家訪時間':'','備註':item.note||''
+      });
+      return;
+    }
+    months.forEach(month=>{
+      const r=item.followups[month]||{};
+      const legacyHome=!!r.completed&&r.type==='homevisit'&&!('homeCompleted' in r);
+      const legacyPhone=!!r.completed&&r.type==='phonevisit'&&!('phoneCompleted' in r);
+      rows.push({
+        '個案姓名':item.name,'服務狀態':item.status==='active'?'服務中':item.status==='paused'?'暫停服務':'已結案',
+        '開始服務日':item.startDate||'','居服員':item.homeCareWorker||'','服務時間':item.serviceSchedule||'',
+        '最近家訪日':item.lastVisitDate||'','月份':month,
+        '家訪完成':(r.homeCompleted||legacyHome)?'V':'','電訪完成':(r.phoneCompleted||legacyPhone)?'V':'',
+        '排定家訪日期':r.scheduledDate||'','排定家訪時間':r.scheduledTime||'','備註':item.note||''
+      });
+    });
+  });
+  return rows;
+}
+function exportSupervisorData(){
+  if(!supervisorCases.length && !supervisorTasks.length){showToast('目前沒有可匯出的居督資料');return;}
+  const rows=supervisorExportRows();
+  const taskRows=supervisorTasks.map(t=>({
+    '日期':t.date||'','開始時間':t.startTime||'','結束時間':t.endTime||'','類型':SUPERVISOR_TYPE_META[t.type]?.label||t.type||'',
+    '個案／事項':t.subject||'','狀態':t.status==='done'?'已完成':'待辦','追蹤月份':t.trackingMonth||'','備註':t.note||''
+  }));
+  const stamp=supervisorDateStr(new Date()).replaceAll('-','');
+  if(typeof XLSX!=='undefined'){
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{'個案姓名':''}]),'個案家電訪');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(taskRows.length?taskRows:[{'日期':''}]),'待辦與家訪排程');
+    XLSX.writeFile(wb,`居督工作台備份_${stamp}.xlsx`);
+    showToast('已匯出居督工作台資料'); return;
+  }
+  const backup={version:'supervisor-v3.3',exportedAt:new Date().toISOString(),cases:supervisorCases,tasks:supervisorTasks};
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`居督工作台備份_${stamp}.json`;a.click();URL.revokeObjectURL(url);
+  showToast('已匯出居督工作台備份');
+}
+function clearSupervisorData(){
+  if(!supervisorCases.length && !supervisorTasks.length){showToast('目前沒有居督資料可清除');return;}
+  const first=confirm('確定要清除本機所有「居督工作台」資料嗎？\n\n將刪除：個案清冊、家電訪完成紀錄、家訪排程及居督待辦。\n此操作無法復原，建議先按「匯出資料」備份。');
+  if(!first)return;
+  const verify=prompt('此操作無法復原。\n若確定清除，請輸入：清除');
+  if(verify!=='清除'){showToast('已取消清除');return;}
+  localStorage.removeItem(SUPERVISOR_STORAGE_KEY);
+  localStorage.removeItem(SUPERVISOR_CASE_STORAGE_KEY);
+  supervisorTasks=[]; supervisorCases=[]; supervisorSelectedDate='';
+  renderSupervisorDashboard(); renderSupervisorCases(); showToast('已清除居督工作台本機資料');
+}
+
 function initSupervisorTool(){
   if(!$('supervisorTool')) return;
   loadSupervisorTasks(); loadSupervisorCases(); supervisorCalendarCursor=new Date(new Date().getFullYear(),new Date().getMonth(),1); supervisorTrackingCursor=new Date(new Date().getFullYear(),new Date().getMonth(),1); ensureSupervisorVisitRecordTasks();
@@ -496,6 +558,8 @@ function initSupervisorTool(){
   $('supervisorImportCases')?.addEventListener('click',()=>$('supervisorCaseFile').click());
   $('supervisorCaseFile')?.addEventListener('change',e=>importSupervisorCases(e.target.files?.[0]));
   $('supervisorDownloadTemplate')?.addEventListener('click',downloadSupervisorTemplate);
+  $('supervisorExportData')?.addEventListener('click',exportSupervisorData);
+  $('supervisorClearData')?.addEventListener('click',clearSupervisorData);
   $('supervisorTrackingPrev')?.addEventListener('click',()=>{supervisorTrackingCursor.setMonth(supervisorTrackingCursor.getMonth()-1);renderSupervisorCases();});
   $('supervisorTrackingNext')?.addEventListener('click',()=>{supervisorTrackingCursor.setMonth(supervisorTrackingCursor.getMonth()+1);renderSupervisorCases();});
   $('supervisorTrackingToday')?.addEventListener('click',()=>{supervisorTrackingCursor=new Date(new Date().getFullYear(),new Date().getMonth(),1);renderSupervisorCases();});
