@@ -126,111 +126,105 @@
       <div class="section-title supervisor-section-title">
         <div>
           <h2>居督工作台</h2>
-          <p>待辦事項依緊急程度與日期自動排序；資料僅儲存在目前裝置的瀏覽器。</p>
+          <p>待辦、行事曆與個案家訪追蹤集中在同一頁；資料僅儲存在目前裝置的瀏覽器。</p>
         </div>
         <div class="supervisor-header-actions">
           <button id="supervisorShowAll" class="secondary-btn" type="button">顯示全部</button>
           <button id="supervisorAddTask" class="primary-btn" type="button">＋新增待辦</button>
+          <button id="supervisorDownloadTemplate" class="secondary-btn" type="button" hidden>下載名單範本</button>
+          <button id="supervisorImportCases" class="secondary-btn" type="button" hidden>匯入名單</button>
+          <button id="supervisorAddCase" class="primary-btn" type="button" hidden>＋新增個案</button>
+          <input id="supervisorCaseFile" type="file" accept=".xlsx,.xls,.csv" hidden>
         </div>
       </div>
 
-      <div class="supervisor-dashboard">
-        <div class="supervisor-task-panel">
-          <div id="supervisorStats" class="supervisor-stats"></div>
+      <div class="supervisor-mode-switch" role="tablist" aria-label="居督工作台模式">
+        <button class="supervisor-mode-btn active" data-supervisor-view="tasks" type="button">待辦・行事曆</button>
+        <button class="supervisor-mode-btn" data-supervisor-view="cases" type="button">個案管理</button>
+      </div>
 
-          <div id="supervisorTaskForm" class="card supervisor-task-form" hidden>
-            <div class="supervisor-form-heading">
-              <h3 id="supervisorFormTitle">新增待辦</h3>
-              <button id="supervisorCloseForm" class="icon-btn" type="button" aria-label="關閉新增待辦">×</button>
+      <div id="supervisorTaskView">
+        <div class="supervisor-dashboard">
+          <div class="supervisor-task-panel">
+            <div id="supervisorStats" class="supervisor-stats"></div>
+
+            <div id="supervisorTaskForm" class="card supervisor-task-form" hidden>
+              <div class="supervisor-form-heading">
+                <h3 id="supervisorFormTitle">新增待辦</h3>
+                <button id="supervisorCloseForm" class="icon-btn" type="button" aria-label="關閉新增待辦">×</button>
+              </div>
+              <input id="supervisorTaskId" type="hidden">
+              <input id="supervisorTaskCaseId" type="hidden">
+              <div class="grid-2">
+                <label>事項類型
+                  <select id="supervisorTaskType">
+                    <option value="shift">找代班</option><option value="medical">陪同就醫人力</option><option value="supervision">居服員個督</option><option value="homevisit">家訪</option><option value="phonevisit">電訪</option><option value="mutation">異動通報</option><option value="meeting">會議紀錄</option><option value="discussion">個案討論</option><option value="callback">回電</option><option value="other">其他</option>
+                  </select>
+                </label>
+                <label>個案／事項名稱<input id="supervisorTaskSubject" maxlength="60" placeholder="例如：王阿姨、八月聯繫會議"></label>
+                <label>日期<input id="supervisorTaskDate" type="date"></label>
+                <label>開始時間<input id="supervisorTaskStartTime" type="time"></label>
+                <label>結束時間<input id="supervisorTaskEndTime" type="time"></label>
+                <label>緊急程度<select id="supervisorTaskPriority"><option value="urgent">急</option><option value="normal" selected>一般</option><option value="low">不急</option></select></label>
+                <label>狀態<select id="supervisorTaskStatus"><option value="pending">待處理</option><option value="done">已完成</option></select></label>
+                <label class="grid-full">已詢問人員<textarea id="supervisorTaskAsked" maxlength="500" placeholder="例如：王小美－無法、林佳怡－待回覆、陳阿華－可代班"></textarea></label>
+              </div>
+              <label>備註<textarea id="supervisorTaskNote" maxlength="300" placeholder="例如：原居服員請假、BA14、需輪椅交通安排"></textarea></label>
+              <div class="button-row"><button id="supervisorSaveTask" class="primary-btn" type="button">儲存待辦</button><button id="supervisorCancelTask" class="ghost-btn" type="button">取消</button></div>
             </div>
-            <input id="supervisorTaskId" type="hidden">
-            <div class="grid-2">
-              <label>事項類型
-                <select id="supervisorTaskType">
-                  <option value="shift">找代班</option>
-                  <option value="medical">陪同就醫人力</option>
-                  <option value="supervision">居服員個督</option>
-                  <option value="homevisit">家訪</option>
-                  <option value="phonevisit">電訪</option>
-                  <option value="mutation">異動通報</option>
-                  <option value="meeting">會議紀錄</option>
-                  <option value="discussion">個案討論</option>
-                  <option value="callback">回電</option>
-                  <option value="other">其他</option>
-                </select>
-              </label>
-              <label>個案／事項名稱
-                <input id="supervisorTaskSubject" maxlength="60" placeholder="例如：王阿姨、八月聯繫會議">
-              </label>
-              <label>日期<input id="supervisorTaskDate" type="date"></label>
-              <label>開始時間<input id="supervisorTaskStartTime" type="time"></label>
-              <label>結束時間<input id="supervisorTaskEndTime" type="time"></label>
-              <label>緊急程度
-                <select id="supervisorTaskPriority">
-                  <option value="urgent">急</option>
-                  <option value="normal" selected>一般</option>
-                  <option value="low">不急</option>
-                </select>
-              </label>
-              <label>狀態
-                <select id="supervisorTaskStatus">
-                  <option value="pending">待處理</option>
-                  <option value="done">已完成</option>
-                </select>
-              </label>
-              <label class="grid-full">已詢問人員
-                <textarea id="supervisorTaskAsked" maxlength="500" placeholder="例如：王小美－無法、林佳怡－待回覆、陳阿華－可代班"></textarea>
-              </label>
+
+            <div class="supervisor-list-toolbar">
+              <div><strong id="supervisorListTitle">全部待辦</strong><span id="supervisorSelectedDateLabel"></span></div>
+              <label class="supervisor-completed-toggle"><input id="supervisorShowCompleted" type="checkbox"> 顯示已完成</label>
             </div>
-            <label>備註<textarea id="supervisorTaskNote" maxlength="300" placeholder="例如：原居服員請假、BA14、需輪椅交通安排"></textarea></label>
-            <div class="button-row">
-              <button id="supervisorSaveTask" class="primary-btn" type="button">儲存待辦</button>
-              <button id="supervisorCancelTask" class="ghost-btn" type="button">取消</button>
-            </div>
+            <div id="supervisorTaskList" class="supervisor-task-list"></div>
           </div>
 
-          <div class="supervisor-list-toolbar">
-            <div>
-              <strong id="supervisorListTitle">全部待辦</strong>
-              <span id="supervisorSelectedDateLabel"></span>
-            </div>
-            <label class="supervisor-completed-toggle"><input id="supervisorShowCompleted" type="checkbox"> 顯示已完成</label>
-          </div>
-          <div id="supervisorTaskList" class="supervisor-task-list"></div>
+          <aside class="calendar-card">
+            <div class="calendar-header"><button id="calendarPrev" class="icon-btn" type="button" aria-label="上個月">‹</button><h3 id="calendarTitle"></h3><button id="calendarNext" class="icon-btn" type="button" aria-label="下個月">›</button></div>
+            <div class="calendar-weekdays" aria-hidden="true"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div id="supervisorCalendar" class="supervisor-calendar"></div>
+            <div class="calendar-legend"><span><i class="legend-dot urgent"></i>急</span><span><i class="legend-dot normal"></i>一般</span><span><i class="legend-dot low"></i>不急</span></div>
+            <p class="small-note">點選日期可只查看當日事項；再次按「顯示全部」即可回到完整清單。</p>
+          </aside>
+        </div>
+      </div>
+
+      <div id="supervisorCaseView" hidden>
+        <div id="supervisorCaseStats" class="supervisor-stats supervisor-case-stats"></div>
+        <div class="card supervisor-case-toolbar">
+          <input id="supervisorCaseSearch" class="search-input" placeholder="搜尋個案、居服員或服務時間">
+          <select id="supervisorCaseFilter"><option value="all">全部狀態</option><option value="active">服務中</option><option value="paused">暫停服務</option><option value="closed">已結案</option></select>
         </div>
 
-        <aside class="calendar-card">
-          <div class="calendar-header">
-            <button id="calendarPrev" class="icon-btn" type="button" aria-label="上個月">‹</button>
-            <h3 id="calendarTitle"></h3>
-            <button id="calendarNext" class="icon-btn" type="button" aria-label="下個月">›</button>
+        <div id="supervisorCaseForm" class="card supervisor-task-form" hidden>
+          <div class="supervisor-form-heading"><h3 id="supervisorCaseFormTitle">新增個案</h3><button id="supervisorCloseCaseForm" class="icon-btn" type="button" aria-label="關閉個案表單">×</button></div>
+          <input id="supervisorCaseId" type="hidden">
+          <div class="grid-2">
+            <label>個案姓名<input id="supervisorCaseName" maxlength="40" placeholder="例如：王小明"></label>
+            <label>開始服務日<input id="supervisorCaseStartDate" type="date"></label>
+            <label>居服員<input id="supervisorCaseWorker" maxlength="60" placeholder="例如：陳小美"></label>
+            <label>服務狀態<select id="supervisorCaseStatus"><option value="active">服務中</option><option value="paused">暫停服務</option><option value="closed">已結案</option></select></label>
+            <label class="grid-full">服務時間／型態<input id="supervisorCaseSchedule" maxlength="120" placeholder="例如：週一、三、五 09:00–11:00"></label>
+            <label>最近一次家訪日<input id="supervisorCaseLastVisit" type="date"><span class="field-hint">儲存後自動計算 3 個月後的下次家訪期限</span></label>
+            <label class="grid-full">備註<textarea id="supervisorCaseNote" maxlength="300" placeholder="只記需要提醒自己的重點即可"></textarea></label>
           </div>
-          <div class="calendar-weekdays" aria-hidden="true">
-            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-          </div>
-          <div id="supervisorCalendar" class="supervisor-calendar"></div>
-          <div class="calendar-legend">
-            <span><i class="legend-dot urgent"></i>急</span>
-            <span><i class="legend-dot normal"></i>一般</span>
-            <span><i class="legend-dot low"></i>不急</span>
-          </div>
-          <p class="small-note">點選日期可只查看當日事項；再次按「顯示全部」即可回到完整清單。</p>
-        </aside>
+          <div class="button-row"><button id="supervisorSaveCase" class="primary-btn" type="button">儲存個案</button><button id="supervisorCancelCase" class="ghost-btn" type="button">取消</button></div>
+        </div>
+
+        <div class="supervisor-case-help"><strong>家訪規則：</strong>最近一次家訪日＋3個月＝下次家訪期限。按「安排家訪」會直接加入上方行事曆；從行事曆完成該筆家訪，也會同步更新個案家訪日期。</div>
+        <div id="supervisorCaseList" class="supervisor-case-list"></div>
       </div>
 
       <div id="supervisorCompleteModal" class="supervisor-modal" hidden>
         <div class="supervisor-modal-backdrop" data-close-complete-modal></div>
         <div class="supervisor-modal-card" role="dialog" aria-modal="true" aria-labelledby="supervisorCompleteTitle">
-          <h3 id="supervisorCompleteTitle">完成確認</h3>
-          <p id="supervisorCompleteSubject" class="hint-text"></p>
-          <input id="supervisorCompleteTaskId" type="hidden">
+          <h3 id="supervisorCompleteTitle">完成確認</h3><p id="supervisorCompleteSubject" class="hint-text"></p><input id="supervisorCompleteTaskId" type="hidden">
           <label class="complete-check"><input id="supervisorScheduleCompleted" type="checkbox"> 已完成人力／排班安排</label>
           <label class="complete-check"><input id="supervisorMutationIncluded" type="checkbox"> 已列入異動通報（代班／人力異動）</label>
+          <p id="supervisorVisitCompleteHint" class="small-note" hidden></p>
           <p class="small-note">可依實際情況勾選；儲存後待辦會標記為已完成。</p>
-          <div class="button-row">
-            <button id="supervisorConfirmComplete" class="primary-btn" type="button">確認完成</button>
-            <button id="supervisorCancelComplete" class="ghost-btn" type="button">取消</button>
-          </div>
+          <div class="button-row"><button id="supervisorConfirmComplete" class="primary-btn" type="button">確認完成</button><button id="supervisorCancelComplete" class="ghost-btn" type="button">取消</button></div>
         </div>
       </div>
     </section>
@@ -611,6 +605,7 @@
     <small>※「居督碎碎唸」為本人實務工作經驗分享，內容可能因各縣市執行方式、主管機關解釋或服務單位規範而有所差異。如有疑義，請以中央及各地方政府最新規定為準。</small>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="serviceData.js"></script>
   <script src="js/core.js"></script>
   <script src="js/tabs.js"></script>
