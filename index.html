@@ -126,7 +126,7 @@
       <div class="section-title supervisor-section-title">
         <div>
           <h2>居督工作台</h2>
-          <p>待辦、行事曆與個案家訪追蹤集中在同一頁；資料僅儲存在目前裝置的瀏覽器。</p>
+          <p>以每月個案清單追蹤家訪與電訪完成度；家訪可排入行事曆，訪視時間過後自動產生紀錄待辦。</p>
         </div>
         <div class="supervisor-header-actions">
           <button id="supervisorShowAll" class="secondary-btn" type="button">顯示全部</button>
@@ -139,11 +139,11 @@
       </div>
 
       <div class="supervisor-mode-switch" role="tablist" aria-label="居督工作台模式">
-        <button class="supervisor-mode-btn active" data-supervisor-view="tasks" type="button">待辦・行事曆</button>
-        <button class="supervisor-mode-btn" data-supervisor-view="cases" type="button">個案管理</button>
+        <button class="supervisor-mode-btn" data-supervisor-view="tasks" type="button">待辦・行事曆</button>
+        <button class="supervisor-mode-btn active" data-supervisor-view="cases" type="button">個案管理</button>
       </div>
 
-      <div id="supervisorTaskView">
+      <div id="supervisorTaskView" hidden>
         <div class="supervisor-dashboard">
           <div class="supervisor-task-panel">
             <div id="supervisorStats" class="supervisor-stats"></div>
@@ -190,8 +190,15 @@
         </div>
       </div>
 
-      <div id="supervisorCaseView" hidden>
+      <div id="supervisorCaseView">
+        <div class="supervisor-month-nav card">
+          <button id="supervisorTrackingPrev" class="icon-btn" type="button" aria-label="上個月">‹</button>
+          <div><strong id="supervisorTrackingMonthLabel"></strong><span>個案追蹤</span></div>
+          <button id="supervisorTrackingNext" class="icon-btn" type="button" aria-label="下個月">›</button>
+          <button id="supervisorTrackingToday" class="ghost-btn" type="button">回本月</button>
+        </div>
         <div id="supervisorCaseStats" class="supervisor-stats supervisor-case-stats"></div>
+        <div id="supervisorCaseProgressDetail" class="supervisor-progress-detail"></div>
         <div class="card supervisor-case-toolbar">
           <input id="supervisorCaseSearch" class="search-input" placeholder="搜尋個案、居服員或服務時間">
           <select id="supervisorCaseFilter"><option value="all">全部狀態</option><option value="active">服務中</option><option value="paused">暫停服務</option><option value="closed">已結案</option></select>
@@ -206,13 +213,13 @@
             <label>居服員<input id="supervisorCaseWorker" maxlength="60" placeholder="例如：陳小美"></label>
             <label>服務狀態<select id="supervisorCaseStatus"><option value="active">服務中</option><option value="paused">暫停服務</option><option value="closed">已結案</option></select></label>
             <label class="grid-full">服務時間／型態<input id="supervisorCaseSchedule" maxlength="120" placeholder="例如：週一、三、五 09:00–11:00"></label>
-            <label>最近一次家訪日<input id="supervisorCaseLastVisit" type="date"><span class="field-hint">儲存後自動計算 3 個月後的下次家訪期限</span></label>
+            <label>最近一次家訪日<input id="supervisorCaseLastVisit" type="date"><span class="field-hint">家訪以月份計算，例如 115/05/10 完成，下次應家訪月份為 115/08</span></label>
             <label class="grid-full">備註<textarea id="supervisorCaseNote" maxlength="300" placeholder="只記需要提醒自己的重點即可"></textarea></label>
           </div>
           <div class="button-row"><button id="supervisorSaveCase" class="primary-btn" type="button">儲存個案</button><button id="supervisorCancelCase" class="ghost-btn" type="button">取消</button></div>
         </div>
 
-        <div class="supervisor-case-help"><strong>家訪規則：</strong>最近一次家訪日＋3個月＝下次家訪期限。按「安排家訪」會直接加入上方行事曆；從行事曆完成該筆家訪，也會同步更新個案家訪日期。</div>
+        <div class="supervisor-case-help"><strong>追蹤規則：</strong>家訪每 3 個月一次，依「月份」計算；家訪月不另列電訪。應家訪個案排在前面，電訪排後面，完成後自動移至同類清單後方。家訪排定時間過後，系統會自動產生「家訪紀錄」待辦，完成紀錄後才計入完成度。</div>
         <div id="supervisorCaseList" class="supervisor-case-list"></div>
       </div>
 

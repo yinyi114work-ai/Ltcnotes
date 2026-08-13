@@ -459,3 +459,12 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
 .field-hint{display:block;margin-top:5px;color:var(--muted);font-size:12px;font-weight:400}
 @media(max-width:900px){.supervisor-case-stats{grid-template-columns:repeat(2,1fr)}.supervisor-case-card{grid-template-columns:1fr}.case-card-actions{min-width:0;grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.supervisor-mode-switch{display:grid;grid-template-columns:1fr 1fr;width:100%}.supervisor-case-stats,.supervisor-case-toolbar{grid-template-columns:1fr}.case-card-actions{grid-template-columns:1fr}.supervisor-case-card{padding:13px}.supervisor-header-actions{grid-template-columns:1fr}}
+
+/* 居督工作台 v3：每月個案追蹤 */
+.supervisor-month-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 14px;margin-bottom:12px}
+.supervisor-month-nav>div{display:flex;align-items:baseline;gap:8px;min-width:150px;justify-content:center}.supervisor-month-nav strong{font-size:20px}.supervisor-month-nav span{font-size:13px;color:var(--muted)}
+.supervisor-progress-detail{text-align:right;color:var(--muted);font-size:13px;margin:-5px 2px 10px}
+.supervisor-case-card.monthly-homevisit{border-left-color:#d5a441}.supervisor-case-card.monthly-phonevisit{border-left-color:#7e9fb1}.supervisor-case-card.is-monthly-done{opacity:.68;background:#f7f5f0}
+.monthly-actions{align-items:stretch}.monthly-check{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;cursor:pointer;font-weight:700}.monthly-check input{width:18px;height:18px}
+.monthly-done{display:flex;align-items:center;justify-content:center;padding:9px 12px;font-weight:800;color:#59705d}.scheduled-hint{display:block;text-align:center;color:var(--muted);line-height:1.4}
+@media(max-width:560px){.supervisor-month-nav{flex-wrap:wrap}.supervisor-progress-detail{text-align:left}.monthly-actions{grid-template-columns:1fr}}
