@@ -5,7 +5,8 @@ const SUPERVISOR_TYPE_META = {
   shift: { label: '找代班', icon: '🔄' },
   medical: { label: '陪同就醫人力', icon: '🏥' },
   supervision: { label: '居服員個督', icon: '👥' },
-  homevisit: { label: '家訪', icon: '🏠' },
+  homevisit: { label: '排定家訪', icon: '🏠' },
+  visitrecord: { label: '家訪紀錄', icon: '📝' },
   phonevisit: { label: '電訪', icon: '☎' },
   mutation: { label: '異動通報', icon: '📄' },
   meeting: { label: '會議紀錄', icon: '📝' },
@@ -22,7 +23,8 @@ let supervisorTasks = [];
 let supervisorCases = [];
 let supervisorSelectedDate = '';
 let supervisorCalendarCursor = new Date();
-let supervisorView = 'tasks';
+let supervisorView = 'cases';
+let supervisorTrackingCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function supervisorDateStr(date){
   const d = date instanceof Date ? date : new Date(date);
@@ -42,6 +44,13 @@ function supervisorAddMonths(dateStr, months){
 }
 function supervisorMonthKey(dateStr){ return String(dateStr || '').slice(0,7); }
 function supervisorFormatDate(dateStr){ return dateStr ? dateStr.replaceAll('-','／') : '—'; }
+function supervisorMonthFromDate(dateStr){ return dateStr ? String(dateStr).slice(0,7) : ''; }
+function supervisorAddMonthKey(monthKey, months){
+  const [y,m]=String(monthKey||'').split('-').map(Number); if(!y||!m) return '';
+  const d=new Date(y,m-1+months,1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function supervisorRocMonth(monthKey){ const [y,m]=String(monthKey||'').split('-').map(Number); return y&&m ? `${y-1911}年${m}月` : '—'; }
+function supervisorTrackingMonth(){ return `${supervisorTrackingCursor.getFullYear()}-${String(supervisorTrackingCursor.getMonth()+1).padStart(2,'0')}`; }
 function loadSupervisorTasks(){
   try{
     const raw = JSON.parse(localStorage.getItem(SUPERVISOR_STORAGE_KEY) || '[]');
@@ -74,6 +83,7 @@ function normalizeSupervisorCase(item){
     nextVisitDate: lastVisitDate ? supervisorAddMonths(lastVisitDate,3) : (item.nextVisitDate || ''),
     status: item.status === 'closed' ? 'closed' : item.status === 'paused' ? 'paused' : 'active',
     note: String(item.note || '').trim(),
+    followups: item.followups && typeof item.followups === 'object' ? item.followups : {},
     createdAt: item.createdAt || Date.now(),
     updatedAt: item.updatedAt || Date.now()
   };
@@ -107,9 +117,11 @@ function openSupervisorForm(task){
   $('supervisorTaskAsked').value = task?.askedPeople || '';
   $('supervisorTaskNote').value = task?.note || '';
   $('supervisorTaskCaseId').value = task?.caseId || '';
+  updateSupervisorTaskFields();
   $('supervisorTaskSubject').focus();
   form.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
+function updateSupervisorTaskFields(){ const type=v('supervisorTaskType'); const row=$('supervisorTaskAsked')?.closest('label'); if(row) row.hidden=['homevisit','visitrecord','phonevisit'].includes(type); }
 function closeSupervisorForm(){ const form=$('supervisorTaskForm'); if(form) form.hidden=true; if($('supervisorTaskId')) $('supervisorTaskId').value=''; }
 function validateTimeRange(start,end){ return !start || !end || start < end; }
 function saveSupervisorTask(){
@@ -123,7 +135,7 @@ function saveSupervisorTask(){
     id:id || `task_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
     type:v('supervisorTaskType') || 'other', subject, date, startTime, endTime,
     priority:v('supervisorTaskPriority') || 'normal', status:v('supervisorTaskStatus')==='done'?'done':'pending',
-    askedPeople:v('supervisorTaskAsked'), note:v('supervisorTaskNote'), caseId:v('supervisorTaskCaseId'),
+    askedPeople:v('supervisorTaskAsked'), note:v('supervisorTaskNote'), caseId:v('supervisorTaskCaseId'), trackingMonth: existing?.trackingMonth || '',
     scheduleCompleted: existing?.scheduleCompleted || false,
     mutationIncluded: existing?.mutationIncluded || false,
     createdAt:existing?.createdAt || Date.now(), updatedAt:Date.now()
@@ -143,30 +155,26 @@ function openSupervisorCompleteModal(id){
   $('supervisorMutationIncluded').closest('label').hidden=!staffingTask;
   const visitHint = $('supervisorVisitCompleteHint');
   if(visitHint){
-    visitHint.hidden = !(task.type==='homevisit' && task.caseId);
-    visitHint.textContent = task.type==='homevisit' && task.caseId ? '完成後會同步更新此個案的最近家訪日，並自動計算下一次家訪期限。' : '';
+    visitHint.hidden = !(task.type==='visitrecord' && task.caseId);
+    visitHint.textContent = task.type==='visitrecord' && task.caseId ? '完成這筆紀錄後，才會將本月家訪計入完成度，並更新下一次家訪月份。' : '';
   }
   modal.hidden=false;
 }
 function closeSupervisorCompleteModal(){ const modal=$('supervisorCompleteModal'); if(modal) modal.hidden=true; }
 function confirmSupervisorComplete(){
   const id=v('supervisorCompleteTaskId');
-  const task = supervisorTasks.find(item=>item.id===id);
-  if(task?.type==='homevisit' && task.caseId){
-    const target = supervisorCases.find(item=>item.id===task.caseId);
+  const task=supervisorTasks.find(item=>item.id===id);
+  if(task?.type==='visitrecord' && task.caseId){
+    const target=supervisorCases.find(item=>item.id===task.caseId);
     if(target){
-      target.lastVisitDate = task.date;
-      target.nextVisitDate = supervisorAddMonths(task.date,3);
-      target.updatedAt = Date.now();
+      const month=task.trackingMonth || supervisorMonthFromDate(task.date);
+      target.followups=target.followups||{};
+      target.followups[month]={...(target.followups[month]||{}),type:'homevisit',completed:true,completedAt:Date.now(),visitDate:task.visitDate||task.date,recordTaskId:task.id};
+      target.lastVisitDate=task.visitDate||task.date; target.nextVisitDate=supervisorAddMonths(target.lastVisitDate,3); target.updatedAt=Date.now();
       saveSupervisorCases();
     }
   }
-  supervisorTasks=supervisorTasks.map(item=>item.id===id?{
-    ...item,status:'done',
-    scheduleCompleted:$('supervisorScheduleCompleted').checked,
-    mutationIncluded:$('supervisorMutationIncluded').checked,
-    completedAt:Date.now(),updatedAt:Date.now()
-  }:item);
+  supervisorTasks=supervisorTasks.map(item=>item.id===id?{...item,status:'done',scheduleCompleted:$('supervisorScheduleCompleted').checked,mutationIncluded:$('supervisorMutationIncluded').checked,completedAt:Date.now(),updatedAt:Date.now()}:item);
   saveSupervisorTasks(); closeSupervisorCompleteModal(); renderSupervisorDashboard(); renderSupervisorCases(); showToast('已標記完成');
 }
 function toggleSupervisorTask(id,checked){
@@ -234,140 +242,90 @@ function renderSupervisorCalendar(){
     supervisorCalendarCursor=new Date(selected.getFullYear(),selected.getMonth(),1); renderSupervisorDashboard();
   }));
 }
-function renderSupervisorDashboard(){ renderSupervisorStats(); renderSupervisorTasks(); renderSupervisorCalendar(); }
-
-// ===== 個案管理 =====
-function supervisorCaseVisitState(item){
-  if(item.status!=='active') return {key:'inactive',label:item.status==='paused'?'暫停服務':'已結案'};
-  if(!item.lastVisitDate) return {key:'missing',label:'尚未登錄家訪'};
-  const next = item.nextVisitDate || supervisorAddMonths(item.lastVisitDate,3);
-  const today = supervisorDateStr(new Date());
-  const currentMonth = supervisorMonthKey(today);
-  const nextMonthDate = new Date(new Date(`${today}T00:00:00`).getFullYear(), new Date(`${today}T00:00:00`).getMonth()+1, 1);
-  const nextMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth()+1).padStart(2,'0')}`;
-  if(next < today) return {key:'overdue',label:'已逾期'};
-  if(supervisorMonthKey(next)===currentMonth) return {key:'due',label:'本月應訪'};
-  if(supervisorMonthKey(next)===nextMonth) return {key:'soon',label:'下月應訪'};
-  return {key:'ok',label:'追蹤中'};
+function ensureSupervisorVisitRecordTasks(){
+  const now=new Date(); let changed=false;
+  supervisorTasks.filter(t=>t.type==='homevisit' && t.caseId && t.status!=='done').forEach(t=>{
+    if(!t.date || !t.startTime) return;
+    const when=new Date(`${t.date}T${t.startTime}:00`); if(Number.isNaN(when.getTime()) || when>now) return;
+    const month=t.trackingMonth || supervisorMonthFromDate(t.date);
+    const exists=supervisorTasks.some(x=>x.type==='visitrecord' && x.caseId===t.caseId && x.trackingMonth===month);
+    if(!exists){
+      supervisorTasks.push({id:`task_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,type:'visitrecord',subject:t.subject,date:supervisorDateStr(now),startTime:'',endTime:'',priority:'normal',status:'pending',askedPeople:'',note:`${supervisorFormatDate(t.date)} ${t.startTime} 家訪後紀錄`,caseId:t.caseId,trackingMonth:month,visitDate:t.date,createdAt:Date.now(),updatedAt:Date.now()}); changed=true;
+    }
+    t.status='done'; t.completedAt=Date.now(); t.updatedAt=Date.now(); changed=true;
+  });
+  if(changed) saveSupervisorTasks();
 }
+function renderSupervisorDashboard(){ ensureSupervisorVisitRecordTasks(); renderSupervisorStats(); renderSupervisorTasks(); renderSupervisorCalendar(); }
+
+// ===== 個案管理：每月家訪／電訪清單 =====
+function supervisorCaseMonthType(item, monthKey){
+  if(item.status!=='active') return 'inactive';
+  const saved=item.followups?.[monthKey]; if(saved?.type) return saved.type;
+  if(!item.lastVisitDate) return 'unset';
+  const lastMonth=supervisorMonthFromDate(item.lastVisitDate);
+  const dueMonth=supervisorAddMonthKey(lastMonth,3);
+  return monthKey===dueMonth ? 'homevisit' : 'phonevisit';
+}
+function supervisorCaseMonthRecord(item, monthKey){ return item.followups?.[monthKey] || {}; }
 function renderSupervisorCaseStats(){
-  const active=supervisorCases.filter(c=>c.status==='active');
-  const overdue=active.filter(c=>supervisorCaseVisitState(c).key==='overdue').length;
-  const due=active.filter(c=>supervisorCaseVisitState(c).key==='due').length;
-  const missing=active.filter(c=>supervisorCaseVisitState(c).key==='missing').length;
-  $('supervisorCaseStats').innerHTML=`<div class="supervisor-stat"><span>服務中個案</span><strong>${active.length}</strong></div><div class="supervisor-stat"><span>本月應家訪</span><strong>${due}</strong></div><div class="supervisor-stat"><span>已逾期</span><strong>${overdue}</strong></div><div class="supervisor-stat"><span>尚未登錄</span><strong>${missing}</strong></div>`;
+  const month=supervisorTrackingMonth(); const active=supervisorCases.filter(c=>c.status==='active');
+  const trackable=active.filter(c=>supervisorCaseMonthType(c,month)!=='unset');
+  const completed=trackable.filter(c=>supervisorCaseMonthRecord(c,month).completed).length;
+  const home=trackable.filter(c=>supervisorCaseMonthType(c,month)==='homevisit');
+  const phone=trackable.filter(c=>supervisorCaseMonthType(c,month)==='phonevisit');
+  const homeDone=home.filter(c=>supervisorCaseMonthRecord(c,month).completed).length, phoneDone=phone.filter(c=>supervisorCaseMonthRecord(c,month).completed).length;
+  const pct=trackable.length?Math.round(completed/trackable.length*100):0;
+  $('supervisorCaseStats').innerHTML=`<div class="supervisor-stat"><span>本月應追蹤</span><strong>${trackable.length}</strong></div><div class="supervisor-stat"><span>已完成</span><strong>${completed}</strong></div><div class="supervisor-stat"><span>剩餘</span><strong>${Math.max(0,trackable.length-completed)}</strong></div><div class="supervisor-stat"><span>完成度</span><strong>${pct}%</strong></div>`;
+  const detail=$('supervisorCaseProgressDetail'); if(detail) detail.textContent=`家訪 ${homeDone}/${home.length}　｜　電訪 ${phoneDone}/${phone.length}`;
 }
 function openSupervisorCaseForm(item){
-  const form=$('supervisorCaseForm'); if(!form) return;
-  form.hidden=false;
-  $('supervisorCaseFormTitle').textContent=item?'編輯個案':'新增個案';
-  $('supervisorCaseId').value=item?.id || '';
-  $('supervisorCaseName').value=item?.name || '';
-  $('supervisorCaseStartDate').value=item?.startDate || '';
-  $('supervisorCaseWorker').value=item?.homeCareWorker || '';
-  $('supervisorCaseSchedule').value=item?.serviceSchedule || '';
-  $('supervisorCaseLastVisit').value=item?.lastVisitDate || '';
-  $('supervisorCaseStatus').value=item?.status || 'active';
-  $('supervisorCaseNote').value=item?.note || '';
-  $('supervisorCaseName').focus();
-  form.scrollIntoView({behavior:'smooth', block:'nearest'});
+  const form=$('supervisorCaseForm'); if(!form) return; form.hidden=false;
+  $('supervisorCaseFormTitle').textContent=item?'編輯個案':'新增個案'; $('supervisorCaseId').value=item?.id||''; $('supervisorCaseName').value=item?.name||'';
+  $('supervisorCaseStartDate').value=item?.startDate||''; $('supervisorCaseWorker').value=item?.homeCareWorker||''; $('supervisorCaseSchedule').value=item?.serviceSchedule||'';
+  $('supervisorCaseLastVisit').value=item?.lastVisitDate||''; $('supervisorCaseStatus').value=item?.status||'active'; $('supervisorCaseNote').value=item?.note||''; $('supervisorCaseName').focus();
 }
 function closeSupervisorCaseForm(){ $('supervisorCaseForm').hidden=true; $('supervisorCaseId').value=''; }
 function saveSupervisorCase(){
-  const name=v('supervisorCaseName');
-  if(!name){ showToast('請填寫個案姓名'); $('supervisorCaseName').focus(); return; }
-  const id=v('supervisorCaseId'); const existing=supervisorCases.find(c=>c.id===id);
-  const lastVisitDate=v('supervisorCaseLastVisit');
-  const item=normalizeSupervisorCase({
-    id:id || `case_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-    name,
-    startDate:v('supervisorCaseStartDate'),
-    homeCareWorker:v('supervisorCaseWorker'),
-    serviceSchedule:v('supervisorCaseSchedule'),
-    lastVisitDate,
-    status:v('supervisorCaseStatus') || 'active',
-    note:v('supervisorCaseNote'),
-    createdAt:existing?.createdAt || Date.now(),
-    updatedAt:Date.now()
-  });
-  if(existing) supervisorCases=supervisorCases.map(c=>c.id===id?item:c); else supervisorCases.push(item);
-  saveSupervisorCases(); closeSupervisorCaseForm(); renderSupervisorCases(); showToast(existing?'已更新個案':'已新增個案');
+  const name=v('supervisorCaseName'); if(!name){showToast('請填寫個案姓名');return;}
+  const id=v('supervisorCaseId'), existing=supervisorCases.find(c=>c.id===id);
+  const item=normalizeSupervisorCase({id:id||`case_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,name,startDate:v('supervisorCaseStartDate'),homeCareWorker:v('supervisorCaseWorker'),serviceSchedule:v('supervisorCaseSchedule'),lastVisitDate:v('supervisorCaseLastVisit'),status:v('supervisorCaseStatus')||'active',note:v('supervisorCaseNote'),followups:existing?.followups||{},createdAt:existing?.createdAt||Date.now(),updatedAt:Date.now()});
+  if(existing) supervisorCases=supervisorCases.map(c=>c.id===id?item:c); else supervisorCases.push(item); saveSupervisorCases(); closeSupervisorCaseForm(); renderSupervisorCases(); showToast(existing?'已更新個案':'已新增個案');
 }
-function deleteSupervisorCase(id){
-  const item=supervisorCases.find(c=>c.id===id); if(!item) return;
-  if(!window.confirm(`確定刪除「${item.name}」？相關待辦不會自動刪除。`)) return;
-  supervisorCases=supervisorCases.filter(c=>c.id!==id); saveSupervisorCases(); renderSupervisorCases(); showToast('已刪除個案');
-}
-function completeSupervisorCaseVisit(id){
-  const item=supervisorCases.find(c=>c.id===id); if(!item) return;
-  const date = window.prompt(`請輸入「${item.name}」本次家訪日期（YYYY-MM-DD）`, supervisorDateStr(new Date()));
-  if(date===null) return;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || !supervisorDateStr(new Date(`${date}T00:00:00`))){ showToast('日期格式不正確'); return; }
-  item.lastVisitDate=date; item.nextVisitDate=supervisorAddMonths(date,3); item.updatedAt=Date.now();
-  saveSupervisorCases(); renderSupervisorCases(); showToast(`已完成家訪，下次期限 ${item.nextVisitDate}`);
+function deleteSupervisorCase(id){ const item=supervisorCases.find(c=>c.id===id); if(!item||!confirm(`確定刪除「${item.name}」？`))return; supervisorCases=supervisorCases.filter(c=>c.id!==id);saveSupervisorCases();renderSupervisorCases(); }
+function completeSupervisorPhoneVisit(id){
+  const item=supervisorCases.find(c=>c.id===id); if(!item)return; const month=supervisorTrackingMonth(); item.followups=item.followups||{};
+  const old=item.followups[month]||{}; item.followups[month]={...old,type:'phonevisit',completed:!old.completed,completedAt:old.completed?null:Date.now()}; item.updatedAt=Date.now(); saveSupervisorCases();renderSupervisorCases();
 }
 function scheduleSupervisorCaseVisit(id){
-  const item=supervisorCases.find(c=>c.id===id); if(!item) return;
-  switchSupervisorView('tasks');
-  openSupervisorForm({
-    type:'homevisit', subject:item.name,
-    date:item.nextVisitDate || supervisorDateStr(new Date()),
-    priority:supervisorCaseVisitState(item).key==='overdue'?'urgent':'normal',
-    caseId:item.id,
-    note:'定期家訪'
-  });
-  $('supervisorTaskStartTime').focus();
+  const item=supervisorCases.find(c=>c.id===id); if(!item)return; const month=supervisorTrackingMonth();
+  const date=prompt(`請輸入「${item.name}」家訪日期（YYYY-MM-DD）`,`${month}-01`); if(date===null)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||supervisorMonthFromDate(date)!==month){showToast(`請選擇 ${supervisorRocMonth(month)} 內的日期`);return;}
+  const time=prompt('請輸入家訪時間（HH:MM）','09:00'); if(time===null)return; if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){showToast('時間格式不正確');return;}
+  const existing=supervisorTasks.find(t=>t.type==='homevisit'&&t.caseId===id&&t.trackingMonth===month&&t.status!=='done');
+  if(existing){existing.date=date;existing.startTime=time;existing.updatedAt=Date.now();}
+  else supervisorTasks.push({id:`task_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,type:'homevisit',subject:item.name,date,startTime:time,endTime:'',priority:'normal',status:'pending',askedPeople:'',note:'定期家訪',caseId:id,trackingMonth:month,createdAt:Date.now(),updatedAt:Date.now()});
+  item.followups=item.followups||{}; item.followups[month]={...(item.followups[month]||{}),type:'homevisit',completed:false,scheduledDate:date,scheduledTime:time}; saveSupervisorTasks();saveSupervisorCases();renderSupervisorCases();showToast(`已排定 ${supervisorFormatDate(date)} ${time} 家訪`);
 }
 function renderSupervisorCases(){
-  if(!$('supervisorCaseList')) return;
-  renderSupervisorCaseStats();
-  const keyword=(v('supervisorCaseSearch') || '').toLowerCase();
-  const statusFilter=v('supervisorCaseFilter') || 'all';
-  let list=supervisorCases.filter(item=>{
-    if(statusFilter!=='all' && item.status!==statusFilter) return false;
-    if(!keyword) return true;
-    return [item.name,item.homeCareWorker,item.serviceSchedule,item.note].some(x=>String(x||'').toLowerCase().includes(keyword));
-  });
-  const rank={overdue:0,due:1,missing:2,soon:3,ok:4,inactive:5};
-  list.sort((a,b)=>{
-    const ar=rank[supervisorCaseVisitState(a).key]??9, br=rank[supervisorCaseVisitState(b).key]??9;
-    if(ar!==br) return ar-br;
-    return (a.nextVisitDate||'9999-12-31').localeCompare(b.nextVisitDate||'9999-12-31') || a.name.localeCompare(b.name,'zh-Hant');
-  });
-  if(!list.length){
-    $('supervisorCaseList').innerHTML='<div class="supervisor-empty">目前沒有符合條件的個案。可按「新增個案」或匯入既有名單。</div>';
-    return;
-  }
-  $('supervisorCaseList').innerHTML=list.map(item=>{
-    const state=supervisorCaseVisitState(item);
-    return `<article class="supervisor-case-card state-${state.key}" data-id="${supervisorEscape(item.id)}">
-      <div class="case-card-main">
-        <div class="case-title-row"><strong>${supervisorEscape(item.name)}</strong><span class="case-visit-badge ${state.key}">${state.label}</span><span class="case-status-label">${item.status==='active'?'服務中':item.status==='paused'?'暫停':'結案'}</span></div>
-        <div class="case-meta">
-          ${item.homeCareWorker?`<span>居服員：${supervisorEscape(item.homeCareWorker)}</span>`:''}
-          ${item.serviceSchedule?`<span>服務：${supervisorEscape(item.serviceSchedule)}</span>`:''}
-        </div>
-        <div class="case-visit-dates"><span>最近家訪：<b>${supervisorFormatDate(item.lastVisitDate)}</b></span><span>下次期限：<b>${supervisorFormatDate(item.nextVisitDate)}</b></span></div>
-        ${item.note?`<p class="case-note">${supervisorEscape(item.note)}</p>`:''}
-      </div>
-      <div class="case-card-actions">
-        <button class="secondary-btn case-schedule" type="button">安排家訪</button>
-        <button class="primary-btn case-complete" type="button">完成家訪</button>
-        <button class="task-action case-edit" type="button">編輯</button>
-        <button class="task-action delete case-delete" type="button">刪除</button>
-      </div>
-    </article>`;
+  if(!$('supervisorCaseList'))return; ensureSupervisorVisitRecordTasks(); renderSupervisorCaseStats(); const month=supervisorTrackingMonth();
+  if($('supervisorTrackingMonthLabel')) $('supervisorTrackingMonthLabel').textContent=supervisorRocMonth(month);
+  const keyword=(v('supervisorCaseSearch')||'').toLowerCase(), statusFilter=v('supervisorCaseFilter')||'all';
+  let list=supervisorCases.filter(item=>(statusFilter==='all'||item.status===statusFilter)&&(!keyword||[item.name,item.homeCareWorker,item.serviceSchedule,item.note].some(x=>String(x||'').toLowerCase().includes(keyword))));
+  const rank={homevisit:0,phonevisit:1,unset:2,inactive:3};
+  list.sort((a,b)=>{const ar=rank[supervisorCaseMonthType(a,month)]??9,br=rank[supervisorCaseMonthType(b,month)]??9;if(ar!==br)return ar-br;const ad=!!supervisorCaseMonthRecord(a,month).completed,bd=!!supervisorCaseMonthRecord(b,month).completed;if(ad!==bd)return ad-bd;return a.name.localeCompare(b.name,'zh-Hant');});
+  if(!list.length){$('supervisorCaseList').innerHTML='<div class="supervisor-empty">目前沒有符合條件的個案。</div>';return;}
+  $('supervisorCaseList').innerHTML=list.map(item=>{const type=supervisorCaseMonthType(item,month),rec=supervisorCaseMonthRecord(item,month),done=!!rec.completed; let badge='',action='';
+    if(type==='homevisit'){badge='<span class="case-visit-badge due">🏠 本月家訪</span>'; const sched=rec.scheduledDate?`${supervisorFormatDate(rec.scheduledDate)} ${rec.scheduledTime||''}`:''; action=done?'<span class="monthly-done">✓ 家訪完成</span>':`<button class="secondary-btn case-schedule" type="button">${sched?'重新排定':'排定家訪'}</button>${sched?`<small class="scheduled-hint">已排 ${sched}</small>`:''}`;}
+    else if(type==='phonevisit'){badge='<span class="case-visit-badge soon">☎ 本月電訪</span>';action=`<label class="monthly-check"><input class="case-phone-complete" type="checkbox" ${done?'checked':''}> ${done?'已完成':'完成'}</label>`;}
+    else if(type==='unset'){badge='<span class="case-visit-badge missing">尚未設定</span>';action='<small class="scheduled-hint">請先登錄最近一次家訪日</small>';}
+    else {badge=`<span class="case-status-label">${item.status==='paused'?'暫停':'結案'}</span>`;}
+    return `<article class="supervisor-case-card monthly-${type} ${done?'is-monthly-done':''}" data-id="${supervisorEscape(item.id)}"><div class="case-card-main"><div class="case-title-row"><strong>${supervisorEscape(item.name)}</strong>${badge}</div><div class="case-meta">${item.homeCareWorker?`<span>居服員：${supervisorEscape(item.homeCareWorker)}</span>`:''}${item.serviceSchedule?`<span>服務：${supervisorEscape(item.serviceSchedule)}</span>`:''}</div><div class="case-visit-dates"><span>最近家訪：<b>${supervisorFormatDate(item.lastVisitDate)}</b></span>${item.lastVisitDate?`<span>下次家訪月：<b>${supervisorRocMonth(supervisorAddMonthKey(supervisorMonthFromDate(item.lastVisitDate),3))}</b></span>`:''}</div></div><div class="case-card-actions monthly-actions">${action}<button class="task-action case-edit" type="button">編輯</button></div></article>`;
   }).join('');
-  document.querySelectorAll('#supervisorCaseList .supervisor-case-card').forEach(card=>{
-    const id=card.dataset.id;
-    card.querySelector('.case-schedule').addEventListener('click',()=>scheduleSupervisorCaseVisit(id));
-    card.querySelector('.case-complete').addEventListener('click',()=>completeSupervisorCaseVisit(id));
-    card.querySelector('.case-edit').addEventListener('click',()=>openSupervisorCaseForm(supervisorCases.find(c=>c.id===id)));
-    card.querySelector('.case-delete').addEventListener('click',()=>deleteSupervisorCase(id));
-  });
+  document.querySelectorAll('#supervisorCaseList .supervisor-case-card').forEach(card=>{const id=card.dataset.id;card.querySelector('.case-schedule')?.addEventListener('click',()=>scheduleSupervisorCaseVisit(id));card.querySelector('.case-phone-complete')?.addEventListener('change',()=>completeSupervisorPhoneVisit(id));card.querySelector('.case-edit')?.addEventListener('click',()=>openSupervisorCaseForm(supervisorCases.find(c=>c.id===id)));});
 }
 function switchSupervisorView(view){
-  supervisorView=view==='cases'?'cases':'tasks';
+  supervisorView=view==='tasks'?'tasks':'cases';
   document.querySelectorAll('.supervisor-mode-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.supervisorView===supervisorView));
   $('supervisorTaskView').hidden=supervisorView!=='tasks';
   $('supervisorCaseView').hidden=supervisorView!=='cases';
@@ -447,12 +405,13 @@ function downloadSupervisorTemplate(){
 
 function initSupervisorTool(){
   if(!$('supervisorTool')) return;
-  loadSupervisorTasks(); loadSupervisorCases(); supervisorCalendarCursor=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+  loadSupervisorTasks(); loadSupervisorCases(); supervisorCalendarCursor=new Date(new Date().getFullYear(),new Date().getMonth(),1); supervisorTrackingCursor=new Date(new Date().getFullYear(),new Date().getMonth(),1); ensureSupervisorVisitRecordTasks();
   document.querySelectorAll('.supervisor-mode-btn').forEach(btn=>btn.addEventListener('click',()=>switchSupervisorView(btn.dataset.supervisorView)));
   $('supervisorAddTask')?.addEventListener('click',()=>openSupervisorForm());
   $('supervisorCloseForm')?.addEventListener('click',closeSupervisorForm);
   $('supervisorCancelTask')?.addEventListener('click',closeSupervisorForm);
   $('supervisorSaveTask')?.addEventListener('click',saveSupervisorTask);
+  $('supervisorTaskType')?.addEventListener('change',updateSupervisorTaskFields);
   $('supervisorShowCompleted')?.addEventListener('change',renderSupervisorTasks);
   $('supervisorShowAll')?.addEventListener('click',()=>{supervisorSelectedDate='';renderSupervisorDashboard();});
   $('calendarPrev')?.addEventListener('click',()=>{supervisorCalendarCursor.setMonth(supervisorCalendarCursor.getMonth()-1);renderSupervisorCalendar();});
@@ -470,5 +429,8 @@ function initSupervisorTool(){
   $('supervisorImportCases')?.addEventListener('click',()=>$('supervisorCaseFile').click());
   $('supervisorCaseFile')?.addEventListener('change',e=>importSupervisorCases(e.target.files?.[0]));
   $('supervisorDownloadTemplate')?.addEventListener('click',downloadSupervisorTemplate);
-  switchSupervisorView('tasks');
+  $('supervisorTrackingPrev')?.addEventListener('click',()=>{supervisorTrackingCursor.setMonth(supervisorTrackingCursor.getMonth()-1);renderSupervisorCases();});
+  $('supervisorTrackingNext')?.addEventListener('click',()=>{supervisorTrackingCursor.setMonth(supervisorTrackingCursor.getMonth()+1);renderSupervisorCases();});
+  $('supervisorTrackingToday')?.addEventListener('click',()=>{supervisorTrackingCursor=new Date(new Date().getFullYear(),new Date().getMonth(),1);renderSupervisorCases();});
+  switchSupervisorView('cases');
 }
