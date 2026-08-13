@@ -468,3 +468,20 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
 .monthly-actions{align-items:stretch}.monthly-check{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;cursor:pointer;font-weight:700}.monthly-check input{width:18px;height:18px}
 .monthly-done{display:flex;align-items:center;justify-content:center;padding:9px 12px;font-weight:800;color:#59705d}.scheduled-hint{display:block;text-align:center;color:var(--muted);line-height:1.4}
 @media(max-width:560px){.supervisor-month-nav{flex-wrap:wrap}.supervisor-progress-detail{text-align:left}.monthly-actions{grid-template-columns:1fr}}
+
+/* 居督個案管理 v3.2：簡易家電訪月清單 */
+.visit-simple-head,.visit-simple-row{display:grid;grid-template-columns:minmax(150px,1fr) 64px 64px 110px 58px;gap:10px;align-items:center}
+.visit-simple-head{padding:8px 16px;font-size:13px;font-weight:700;opacity:.68;text-align:center}
+.visit-simple-head span:first-child{text-align:left}
+.visit-simple-row{padding:12px 16px}
+.visit-simple-name{display:flex;flex-direction:column;gap:3px}.visit-simple-name small{font-size:12px;opacity:.68}
+.visit-simple-check{display:flex;justify-content:center;align-items:center;cursor:pointer}
+.visit-simple-check input{width:22px;height:22px;accent-color:currentColor}.visit-simple-check span{display:none}
+.supervisor-local-notice,.supervisor-disclaimer{margin:10px 0;padding:12px 14px;border-radius:12px;background:rgba(120,120,120,.07);font-size:13px;line-height:1.65}
+.supervisor-disclaimer{font-size:12px;opacity:.82}
+@media(max-width:700px){
+ .visit-simple-head,.visit-simple-row{grid-template-columns:minmax(110px,1fr) 48px 48px 86px}
+ .visit-simple-head span:last-child{display:none}
+ .visit-simple-row>div:last-child{grid-column:1/-1;text-align:right}
+ .visit-simple-row{gap:8px}
+}
