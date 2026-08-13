@@ -485,3 +485,6 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
  .visit-simple-row>div:last-child{grid-column:1/-1;text-align:right}
  .visit-simple-row{gap:8px}
 }
+
+.supervisor-header-actions .danger-btn{border:1px solid rgba(170,70,70,.35);background:rgba(170,70,70,.07);color:inherit;border-radius:10px;padding:9px 13px;font:inherit;font-weight:700;cursor:pointer}
+.supervisor-header-actions .danger-btn:hover{background:rgba(170,70,70,.13)}
