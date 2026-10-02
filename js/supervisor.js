@@ -1,3 +1,49 @@
+const SUPERVISOR_WEEKDAYS=['週一','週二','週三','週四','週五','週六','週日'];
+const SUPERVISOR_SERVICE_ITEMS=['身體照顧','沐浴／洗頭','如廁／排泄照顧','備餐','協助進食','家務','代購','陪同外出','陪同就醫','陪伴','翻身／移位','其他'];
+function normalizeSupervisorWeekSchedule(items){
+  const time=value=>/^([01]\d|2[0-3]):[0-5]\d$/.test(String(value||''))?String(value):'';
+  return (Array.isArray(items)?items:[]).filter(x=>x&&Number.isInteger(Number(x.day))&&Number(x.day)>=0&&Number(x.day)<7).map(x=>({day:Number(x.day),checked:!!x.checked,start:time(x.start),end:time(x.end),worker:String(x.worker||''),services:Array.isArray(x.services)?x.services.filter(t=>typeof t==='string'):[],note:String(x.note||'')}));
+}
+function supervisorWeekScheduleText(items,extra=''){
+  const lines=normalizeSupervisorWeekSchedule(items).filter(x=>x.checked).map(x=>SUPERVISOR_WEEKDAYS[x.day]+(x.start&&x.end?' '+x.start+'–'+x.end:'（時間待確認）')+(x.worker?'／'+x.worker:'')+(x.services.length?'／'+x.services.join('、'):'')+(x.note?'／'+x.note:''));
+  if(extra.trim())lines.push(extra.trim());return lines.join('；');
+}
+function supervisorSlotHTML(x){
+  const label=SUPERVISOR_WEEKDAYS[x.day],esc=supervisorEscape;
+  return `<div class="supervisor-slot" data-day="${x.day}"><div class="supervisor-week-row"><label class="check-item"><input class="slot-enabled" type="checkbox" ${x.checked?'checked':''}>${label}</label><label>開始<input type="time" class="week-start" value="${esc(x.start||'')}"></label><span>～</span><label>結束<input type="time" class="week-end" value="${esc(x.end||'')}"></label></div><label>此時段居服員<input class="slot-worker" maxlength="60" value="${esc(x.worker||'')}" placeholder="可填代班人員；留白時交班會帶入主責居服員"></label><fieldset><legend>此時段服務項目（可複選）</legend><div class="checkbox-grid">${[...new Set([...SUPERVISOR_SERVICE_ITEMS,...(x.services||[])])].map(t=>`<label class="check-item"><input class="slot-service" type="checkbox" value="${esc(t)}" ${(x.services||[]).includes(t)?'checked':''}>${esc(t)}</label>`).join('')}</div></fieldset><label>時段備註<input class="slot-note" maxlength="1000" value="${esc(x.note||'')}" placeholder="服務順序、其他服務項目或該時段特別交代"></label><button type="button" class="ghost-btn slot-remove">移除此時段</button></div>`;
+}
+function renderSupervisorWeekSchedule(items=[]){
+  const saved=normalizeSupervisorWeekSchedule(items);
+  $('supervisorWeekSchedule').innerHTML=SUPERVISOR_WEEKDAYS.map((label,day)=>`<details class="supervisor-day" open><summary>${label}</summary><div class="day-slots">${(saved.filter(x=>x.day===day).length?saved.filter(x=>x.day===day):[{day,checked:false}]).map(supervisorSlotHTML).join('')}</div><button type="button" class="secondary-btn slot-add" data-day="${day}">＋新增${label}時段</button></details>`).join('');
+  bindSupervisorSlots();
+}
+function bindSupervisorSlots(){
+  const box=$('supervisorWeekSchedule');
+  box.onclick=e=>{
+    if(e.target.closest('.slot-add')){const btn=e.target.closest('.slot-add');btn.previousElementSibling.insertAdjacentHTML('beforeend',supervisorSlotHTML({day:Number(btn.dataset.day),checked:true}));}
+    if(e.target.closest('.slot-remove'))e.target.closest('.supervisor-slot').remove();
+  };
+}
+function readSupervisorWeekSchedule(){
+  return [...document.querySelectorAll('#supervisorWeekSchedule .supervisor-slot')].map(row=>({day:Number(row.dataset.day),checked:row.querySelector('.slot-enabled').checked,start:row.querySelector('.week-start').value,end:row.querySelector('.week-end').value,worker:row.querySelector('.slot-worker').value.trim(),services:[...row.querySelectorAll('.slot-service:checked')].map(x=>x.value),note:row.querySelector('.slot-note').value.trim()}));
+}
+const SUPERVISOR_CARE_FIELDS={height:'身高（cm）',weight:'體重（kg）',transfer:'移位方式',transferNote:'移位補充',mobility:'行動與輔具',cognition:'溝通與認知',emotion:'情緒狀況',comfort:'溝通／安撫方式',careOther:'其他照顧注意事項'};
+function supervisorCareText(c){return Object.entries(SUPERVISOR_CARE_FIELDS).filter(([key])=>c[key]).map(([key,label])=>label+'：'+c[key]).join('\n');}
+const SUPERVISOR_HANDOVER_ITEMS = ["溝通與認知", "行走與移位協助", "跌倒風險與輔具", "飲食與吞嚥注意", "如廁與排泄照顧", "沐浴與身體清潔", "皮膚與傷口注意", "備餐與家務細節", "陪同外出", "入家方式與用品位置", "家屬交代與個案習慣", "異常狀況與回報事項"];
+function supervisorChecklistText(items){
+  return (items||[]).filter(x=>x.checked).map(x=>'☑ '+x.label+(x.note?'：'+x.note:'')).join('\n');
+}
+function renderSupervisorHandoverChecks(items=[]){
+  const saved=new Map(items.map(x=>[x.label,x]));
+  const labels=[...new Set([...SUPERVISOR_HANDOVER_ITEMS,...saved.keys()])];
+  $('supervisorHandoverChecks').innerHTML=labels.map(label=>{
+    const item=saved.get(label)||{};
+    return `<div class="handover-check-card" data-label="${supervisorEscape(label)}"><label class="check-item"><input type="checkbox" ${item.checked?'checked':''}>${supervisorEscape(label)}</label><label class="handover-item-note">補充備註<textarea maxlength="1000" rows="2" placeholder="請填寫實際協助方式、注意事項">${supervisorEscape(item.note||'')}</textarea></label></div>`;
+  }).join('');
+}
+function readSupervisorHandoverChecks(){
+  return [...document.querySelectorAll('#supervisorHandoverChecks .handover-check-card')].map(el=>({label:el.dataset.label,checked:el.querySelector('input').checked,note:el.querySelector('textarea').value.trim()}));
+}
 // ===== 居督工作台 v2.0：待辦行事曆 + 個案管理 =====
 const SUPERVISOR_STORAGE_KEY = 'longcareSupervisorTasksV1';
 const SUPERVISOR_CASE_STORAGE_KEY = 'longcareSupervisorCasesV1';
@@ -73,12 +119,22 @@ function loadSupervisorCases(){
 function saveSupervisorCases(){ localStorage.setItem(SUPERVISOR_CASE_STORAGE_KEY, JSON.stringify(supervisorCases)); window.dispatchEvent(new Event('supervisor-data-changed')); }
 function normalizeSupervisorCase(item){
   const lastVisitDate = item.lastVisitDate || '';
+  const weekly=normalizeSupervisorWeekSchedule(item.serviceWeekSchedule);
+  const arrangements=Array.isArray(item.serviceArrangements)?normalizeSupervisorArrangements(item.serviceArrangements):migrateSupervisorArrangements(weekly);
+  const extra=(Array.isArray(item.serviceArrangements)||Array.isArray(item.serviceWeekSchedule))?String(item.serviceScheduleExtra||'').trim():String(item.serviceSchedule||'').trim();
   return {
     id: item.id || `case_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+    ...Object.fromEntries(Object.keys(SUPERVISOR_CARE_FIELDS).map(key=>[key,String(item[key]||'').trim()])),
+    cms: /^[1-8]$/.test(String(item.cms||''))?String(item.cms):'',
+    identity: String(item.identity||'').trim(),
+    handoverItems: Array.isArray(item.handoverItems)?item.handoverItems.filter(x=>x&&typeof x.label==='string').map(x=>({label:x.label,checked:!!x.checked,note:String(x.note||'').trim()})):[],
     name: String(item.name || '').trim(),
     startDate: item.startDate || '',
     homeCareWorker: String(item.homeCareWorker || '').trim(),
-    serviceSchedule: String(item.serviceSchedule || '').trim(),
+    serviceWeekSchedule:weekly,
+    serviceArrangements:arrangements,
+    serviceScheduleExtra:extra,
+    serviceSchedule:supervisorArrangementsText(arrangements,extra),
     lastVisitDate,
     nextVisitDate: lastVisitDate ? supervisorAddMonths(lastVisitDate,3) : (item.nextVisitDate || ''),
     status: item.status === 'closed' ? 'closed' : item.status === 'paused' ? 'paused' : 'active',
@@ -283,15 +339,22 @@ function renderSupervisorCaseStats(){
 function openSupervisorCaseForm(item){
   const form=$('supervisorCaseForm'); if(!form) return; form.hidden=false;
   $('supervisorCaseFormTitle').textContent=item?'編輯個案':'新增個案'; $('supervisorCaseId').value=item?.id||''; $('supervisorCaseName').value=item?.name||'';
-  $('supervisorCaseStartDate').value=item?.startDate||''; $('supervisorCaseWorker').value=item?.homeCareWorker||''; $('supervisorCaseSchedule').value=item?.serviceSchedule||'';
+  Object.keys(SUPERVISOR_CARE_FIELDS).forEach(key=>$('care_'+key).value=item?.[key]||'');
+  $('supervisorCaseCms').value=item?.cms||''; $('supervisorCaseIdentity').value=item?.identity||''; renderSupervisorHandoverChecks(item?.handoverItems||[]);
+  $('supervisorCaseStartDate').value=item?.startDate||''; $('supervisorCaseWorker').value=item?.homeCareWorker||''; $('supervisorCaseSchedule').value=item?(item.serviceScheduleExtra??item.serviceSchedule??''):''; renderSupervisorArrangements(item?.serviceArrangements||migrateSupervisorArrangements(item?.serviceWeekSchedule||[]));
   $('supervisorCaseLastVisit').value=item?.lastVisitDate||''; $('supervisorCaseStatus').value=item?.status||'active'; $('supervisorCaseNote').value=item?.note||''; ['condition','serviceDetails','handoverNote'].forEach(k=>$(k+'Field').value=item?.[k]||''); $('supervisorCaseName').focus();
 }
 function closeSupervisorCaseForm(){ $('supervisorCaseForm').hidden=true; $('supervisorCaseId').value=''; }
 function saveSupervisorCase(){
   const name=v('supervisorCaseName'); if(!name){showToast('請填寫個案姓名');return;}
+  const care=Object.fromEntries(Object.keys(SUPERVISOR_CARE_FIELDS).map(key=>[key,v('care_'+key)]));
+  if(['height','weight'].some(key=>care[key]&&(!Number.isFinite(Number(care[key]))||Number(care[key])<=0))){showToast('身高、體重請填大於零的數字，或留白');return;}
+  const arrangements=readSupervisorArrangements();
+  const invalid=arrangements.map(supervisorArrangementError).find(Boolean);
+  if(invalid){showToast(invalid);return;}
   const id=v('supervisorCaseId'), existing=supervisorCases.find(c=>c.id===id);
-  const item=normalizeSupervisorCase({id:id||`case_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,name,startDate:v('supervisorCaseStartDate'),homeCareWorker:v('supervisorCaseWorker'),serviceSchedule:v('supervisorCaseSchedule'),lastVisitDate:v('supervisorCaseLastVisit'),status:v('supervisorCaseStatus')||'active',note:v('supervisorCaseNote'),condition:v('conditionField'),serviceDetails:v('serviceDetailsField'),handoverNote:v('handoverNoteField'),followups:existing?.followups||{},createdAt:existing?.createdAt||Date.now(),updatedAt:Date.now()});
-  if(existing) supervisorCases=supervisorCases.map(c=>c.id===id?item:c); else supervisorCases.push(item); saveSupervisorCases(); closeSupervisorCaseForm(); renderSupervisorCases(); showToast(existing?'已更新個案':'已新增個案');
+  const item=normalizeSupervisorCase({id:id||`case_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,name,...care,cms:v('supervisorCaseCms'),identity:v('supervisorCaseIdentity'),handoverItems:readSupervisorHandoverChecks(),startDate:v('supervisorCaseStartDate'),homeCareWorker:v('supervisorCaseWorker'),serviceArrangements:arrangements,serviceWeekSchedule:[],serviceScheduleExtra:v('supervisorCaseSchedule'),lastVisitDate:v('supervisorCaseLastVisit'),status:v('supervisorCaseStatus')||'active',note:v('supervisorCaseNote'),condition:v('conditionField'),serviceDetails:v('serviceDetailsField'),handoverNote:v('handoverNoteField'),followups:existing?.followups||{},createdAt:existing?.createdAt||Date.now(),updatedAt:Date.now()});
+  if(existing) supervisorCases=supervisorCases.map(c=>c.id===id?item:c); else supervisorCases.push(item); saveSupervisorCases(); closeSupervisorCaseForm(); renderSupervisorCases(); showToast(existing?'已更新個案':'已新增個案'); openSupervisorHandover(item.id);
 }
 function deleteSupervisorCase(id){ const item=supervisorCases.find(c=>c.id===id); if(!item||!confirm(`確定刪除「${item.name}」？`))return; supervisorCases=supervisorCases.filter(c=>c.id!==id);saveSupervisorCases();renderSupervisorCases(); }
 function completeSupervisorPhoneVisit(id){
@@ -384,7 +447,7 @@ function renderSupervisorCases(){
       <label class="visit-simple-check"><input class="case-home-simple" type="checkbox" ${homeDone?'checked':''} ${inactive||unset?'disabled':''}><span>✓</span></label>
       <label class="visit-simple-check"><input class="case-phone-simple" type="checkbox" ${phoneDone?'checked':''} ${inactive||unset?'disabled':''}><span>✓</span></label>
       <div><button class="secondary-btn case-schedule" type="button" ${inactive||unset?'disabled':''}>${sched?'改期':'排家訪'}</button></div>
-      <div><button class="task-action case-edit" type="button">編輯</button><button class="task-action case-handover" type="button">產出交班資訊</button></div>
+      <div><button class="task-action case-edit" type="button">個案資料／交班事項</button><button class="task-action case-handover" type="button">產出交班單</button></div>
     </article>`;
   }).join('');
   document.querySelectorAll('#supervisorCaseList .supervisor-case-card').forEach(card=>{
@@ -421,10 +484,11 @@ function mapSupervisorImportRow(row){
   const rawStatus=read(['狀態','服務狀態','status']);
   let status='active'; if(/暫停|pause/i.test(rawStatus)) status='paused'; else if(/結案|closed|close/i.test(rawStatus)) status='closed';
   return normalizeSupervisorCase({
-    name,
+    name,...Object.fromEntries(Object.entries(SUPERVISOR_CARE_FIELDS).map(([key,label])=>[key,read([label,key])])),cms:read(['CMS','CMS等級','cms']).replace(/CMS\s*/i,''),identity:read(['身分別','identity']),handoverItems:(()=>{try{return JSON.parse(read(['交班勾選資料','handoverItems'])||'[]');}catch{return [];}})(),
     startDate:normalizeImportedDate(read(['開始服務日','服務開始日','開案日','startDate'])),
-    homeCareWorker:read(['居服員','服務人員','homeCareWorker']),
+    homeCareWorker:read(['主責居服員','居服員','服務人員','homeCareWorker']),
     serviceSchedule:read(['服務時間','服務頻率','服務型態','serviceSchedule']),
+    ...(()=>{const current=read(['服務安排資料','serviceArrangements']);if(current){try{return {serviceArrangements:JSON.parse(current),serviceScheduleExtra:read(['排班補充','serviceScheduleExtra'])};}catch{return {};}}const raw=read(['每週時段資料','serviceWeekSchedule']);try{return raw?{serviceWeekSchedule:JSON.parse(raw),serviceScheduleExtra:read(['排班補充','serviceScheduleExtra'])}:{};}catch{return {};}})(),
     lastVisitDate:normalizeImportedDate(read(['最近家訪日','最近家訪日期','上次家訪日','lastVisitDate'])),
     status,
     note:read(['備註','note']),condition:read(['個案體況','condition']),serviceDetails:read(['服務細節','serviceDetails']),handoverNote:read(['交班備註','handoverNote'])
@@ -462,8 +526,8 @@ async function importSupervisorCases(file){
       const old=byName.get(item.name);
       if(old){
         const source=rows.find(row=>mapSupervisorImportRow(row)?.name===item.name)||{};
-        const fields={condition:['個案體況','condition'],serviceDetails:['服務細節','serviceDetails'],handoverNote:['交班備註','handoverNote']};
-        for(const [key,aliases] of Object.entries(fields))if(!Object.keys(source).some(k=>aliases.includes(String(k).trim())))item[key]=old[key]||'';
+        const fields={...Object.fromEntries(Object.entries(SUPERVISOR_CARE_FIELDS).map(([key,label])=>[key,[label,key]])),cms:['CMS','CMS等級','cms'],identity:['身分別','identity'],handoverItems:['交班勾選資料','handoverItems'],condition:['個案體況','condition'],serviceDetails:['服務細節','serviceDetails'],handoverNote:['交班備註','handoverNote']};
+        for(const [key,aliases] of Object.entries(fields))if(!Object.keys(source).some(k=>aliases.includes(String(k).trim())))item[key]=old[key]||(key==='handoverItems'?[]:'');
         Object.assign(old,{...item,followups:old.followups||{},id:old.id,createdAt:old.createdAt,updatedAt:Date.now()});
       }
       else { supervisorCases.push(item); byName.set(item.name,item); }
@@ -473,7 +537,7 @@ async function importSupervisorCases(file){
   finally{ $('supervisorCaseFile').value=''; }
 }
 function downloadSupervisorTemplate(){
-  const headers=['個案姓名','開始服務日','居服員','服務時間','最近家訪日','狀態','備註','個案體況','服務細節','交班備註'];
+  const headers=[...Object.values(SUPERVISOR_CARE_FIELDS),'服務安排資料','每週時段資料','排班補充','CMS','身分別','交班勾選資料','個案姓名','開始服務日','居服員','服務時間','最近家訪日','狀態','備註','個案體況','服務細節','交班備註'];
   if(typeof XLSX!=='undefined'){
     const ws=XLSX.utils.aoa_to_sheet([headers,headers.map(()=> '')]); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'居督個案名單'); XLSX.writeFile(wb,'居督個案名單_空白範本.xlsx');
     return;
@@ -490,8 +554,8 @@ function supervisorExportRows(){
     if(!months.length){
       rows.push({
         '個案姓名':item.name,'服務狀態':item.status==='active'?'服務中':item.status==='paused'?'暫停服務':'已結案',
-        '開始服務日':item.startDate||'','居服員':item.homeCareWorker||'','服務時間':item.serviceSchedule||'',
-        '最近家訪日':item.lastVisitDate||'','月份':'','家訪完成':'','電訪完成':'','排定家訪日期':'','排定家訪時間':'','備註':item.note||'','個案體況':item.condition||'','服務細節':item.serviceDetails||'','交班備註':item.handoverNote||''
+        ...Object.fromEntries(Object.entries(SUPERVISOR_CARE_FIELDS).map(([key,label])=>[label,item[key]||''])),'開始服務日':item.startDate||'','居服員':item.homeCareWorker||'','服務時間':item.serviceSchedule||'','服務安排資料':JSON.stringify(item.serviceArrangements||[]),'每週時段資料':JSON.stringify(item.serviceWeekSchedule||[]),'排班補充':item.serviceScheduleExtra||'',
+        '最近家訪日':item.lastVisitDate||'','月份':'','家訪完成':'','電訪完成':'','排定家訪日期':'','排定家訪時間':'','備註':item.note||'','個案體況':item.condition||'','服務細節':item.serviceDetails||'','交班備註':item.handoverNote||'','CMS':item.cms||'','身分別':item.identity||'','交班勾選資料':JSON.stringify(item.handoverItems||[])
       });
       return;
     }
@@ -501,10 +565,10 @@ function supervisorExportRows(){
       const legacyPhone=!!r.completed&&r.type==='phonevisit'&&!('phoneCompleted' in r);
       rows.push({
         '個案姓名':item.name,'服務狀態':item.status==='active'?'服務中':item.status==='paused'?'暫停服務':'已結案',
-        '開始服務日':item.startDate||'','居服員':item.homeCareWorker||'','服務時間':item.serviceSchedule||'',
+        ...Object.fromEntries(Object.entries(SUPERVISOR_CARE_FIELDS).map(([key,label])=>[label,item[key]||''])),'開始服務日':item.startDate||'','居服員':item.homeCareWorker||'','服務時間':item.serviceSchedule||'','服務安排資料':JSON.stringify(item.serviceArrangements||[]),'每週時段資料':JSON.stringify(item.serviceWeekSchedule||[]),'排班補充':item.serviceScheduleExtra||'',
         '最近家訪日':item.lastVisitDate||'','月份':month,
         '家訪完成':(r.homeCompleted||legacyHome)?'V':'','電訪完成':(r.phoneCompleted||legacyPhone)?'V':'',
-        '排定家訪日期':r.scheduledDate||'','排定家訪時間':r.scheduledTime||'','備註':item.note||'','個案體況':item.condition||'','服務細節':item.serviceDetails||'','交班備註':item.handoverNote||''
+        '排定家訪日期':r.scheduledDate||'','排定家訪時間':r.scheduledTime||'','備註':item.note||'','個案體況':item.condition||'','服務細節':item.serviceDetails||'','交班備註':item.handoverNote||'','CMS':item.cms||'','身分別':item.identity||'','交班勾選資料':JSON.stringify(item.handoverItems||[])
       });
     });
   });
