@@ -106,18 +106,18 @@ const SUPERVISOR_CARE_FIELDS={height:'身高（cm）',weight:'體重（kg）',tr
 function supervisorCareText(c){return Object.entries(SUPERVISOR_CARE_FIELDS).filter(([key])=>c[key]).map(([key,label])=>label+'：'+c[key]).join('\n');}
 const SUPERVISOR_HANDOVER_ITEMS = ["溝通與認知", "行走與移位協助", "跌倒風險與輔具", "飲食與吞嚥注意", "如廁與排泄照顧", "沐浴與身體清潔", "皮膚與傷口注意", "備餐與家務細節", "陪同外出", "入家方式與用品位置", "家屬交代與個案習慣", "異常狀況與回報事項"];
 function supervisorChecklistText(items){
-  return (items||[]).filter(x=>x.checked).map(x=>'☑ '+x.label+(x.note?'：'+x.note:'')).join('\n');
+  return (items||[]).filter(x=>x&&String(x.note||'').trim()).map(x=>x.label+'：'+String(x.note).trim()).join('\n');
 }
 function renderSupervisorHandoverChecks(items=[]){
   const saved=new Map(items.map(x=>[x.label,x]));
   const labels=[...new Set([...SUPERVISOR_HANDOVER_ITEMS,...saved.keys()])];
   $('supervisorHandoverChecks').innerHTML=labels.map(label=>{
     const item=saved.get(label)||{};
-    return `<div class="handover-check-card" data-label="${supervisorEscape(label)}"><label class="check-item"><input type="checkbox" ${item.checked?'checked':''}>${supervisorEscape(label)}</label><label class="handover-item-note">補充備註<textarea maxlength="1000" rows="2" placeholder="請填寫實際協助方式、注意事項">${supervisorEscape(item.note||'')}</textarea></label></div>`;
+    return `<div class="handover-check-card" data-label="${supervisorEscape(label)}"><label class="handover-item-note">${supervisorEscape(label)}<textarea maxlength="1000" rows="2" placeholder="請填寫實際協助方式、注意事項">${supervisorEscape(item.note||'')}</textarea></label></div>`;
   }).join('');
 }
 function readSupervisorHandoverChecks(){
-  return [...document.querySelectorAll('#supervisorHandoverChecks .handover-check-card')].map(el=>({label:el.dataset.label,checked:el.querySelector('input').checked,note:el.querySelector('textarea').value.trim()}));
+  return [...document.querySelectorAll('#supervisorHandoverChecks .handover-check-card')].map(el=>({label:el.dataset.label,checked:true,note:el.querySelector('textarea').value.trim()}));
 }
 // ===== 居督工作台 v2.0：待辦行事曆 + 個案管理 =====
 const SUPERVISOR_STORAGE_KEY = 'longcareSupervisorTasksV1';
@@ -404,11 +404,16 @@ function supervisorCaseMonthType(item, monthKey){
 }
 function supervisorCaseMonthRecord(item, monthKey){ return item.followups?.[monthKey] || {}; }
 function renderSupervisorCaseStats(){
+  const overview=$('supervisorCaseloadStats');
+  if(overview){
+    const month=supervisorTrackingMonth(),active=supervisorCases.filter(c=>c.status!=='closed').length,paused=supervisorCases.filter(c=>c.status==='paused').length,closed=supervisorCases.filter(c=>c.status==='closed').length,newCases=supervisorCases.filter(c=>String(c.startDate||'').slice(0,7)===month).length;
+    overview.innerHTML=`<div class="supervisor-stat"><span>目前在案（含暫停）</span><strong>${active}</strong></div><div class="supervisor-stat"><span>暫停服務</span><strong>${paused}</strong></div><div class="supervisor-stat"><span>已結案</span><strong>${closed}</strong></div><div class="supervisor-stat"><span>${supervisorRocMonth(month)}新案</span><strong>${newCases}</strong></div>`;
+  }
   const month=supervisorTrackingMonth(); const active=supervisorCases.filter(c=>c.status==='active');
   const trackable=active.filter(c=>supervisorCaseMonthType(c,month)!=='unset');
   const completed=trackable.filter(c=>{const r=supervisorCaseMonthRecord(c,month);return !!(r.homeCompleted||r.phoneCompleted||r.completed);}).length;
   const pct=trackable.length?Math.round(completed/trackable.length*100):0;
-  $('supervisorCaseStats').innerHTML=`<div class="supervisor-stat"><span>本月個案</span><strong>${trackable.length}</strong></div><div class="supervisor-stat"><span>已完成</span><strong>${completed}</strong></div><div class="supervisor-stat"><span>未完成</span><strong>${Math.max(0,trackable.length-completed)}</strong></div><div class="supervisor-stat"><span>完成度</span><strong>${pct}%</strong></div>`;
+  $('supervisorCaseStats').innerHTML=`<div class="supervisor-stat"><span>本月應追蹤</span><strong>${trackable.length}</strong></div><div class="supervisor-stat"><span>已完成</span><strong>${completed}</strong></div><div class="supervisor-stat"><span>未完成</span><strong>${Math.max(0,trackable.length-completed)}</strong></div><div class="supervisor-stat"><span>完成度</span><strong>${pct}%</strong></div>`;
   const detail=$('supervisorCaseProgressDetail'); if(detail) detail.textContent='家訪、電訪直接勾選即可；原應電訪個案若臨時家訪，可改勾家訪。';
 }
 function openSupervisorCaseForm(item){
@@ -518,7 +523,7 @@ function renderSupervisorCases(){
     const sched=rec.scheduledDate?`${supervisorFormatDate(rec.scheduledDate)} ${rec.scheduledTime||''}`:'';
     const due=type==='homevisit'?'應家訪':type==='phonevisit'?'應電訪':unset?'未設定':item.status==='paused'?'暫停':'結案';
     return `<article class="supervisor-case-card visit-simple-row ${done?'is-monthly-done':''}" data-id="${supervisorEscape(item.id)}">
-      <div class="visit-simple-name"><strong>${supervisorEscape(item.name)}</strong><small>${due}${sched?`・已排 ${sched}`:''}</small></div>
+      <div class="visit-simple-name"><strong>${supervisorEscape(item.name)}</strong><small>${supervisorEscape([item.cms?'CMS '+item.cms:'CMS未填',item.identity||'身分別未填',item.homeCareWorker?'主責：'+item.homeCareWorker:'主責未填'].join('・'))}</small><small>${due}${sched?`・已排 ${sched}`:''}</small></div>
       <label class="visit-simple-check"><input class="case-home-simple" type="checkbox" ${homeDone?'checked':''} ${inactive||unset?'disabled':''}><span>✓</span></label>
       <label class="visit-simple-check"><input class="case-phone-simple" type="checkbox" ${phoneDone?'checked':''} ${inactive||unset?'disabled':''}><span>✓</span></label>
       <div><button class="secondary-btn case-schedule" type="button" ${inactive||unset?'disabled':''}>${sched?'改期':'排家訪'}</button></div>
