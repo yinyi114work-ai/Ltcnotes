@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Longcare.Notes｜居家督導輔助小工具</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=20261002-arrfix1" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-6H934JVD52"></script>
   <script>
@@ -254,7 +254,7 @@
             <label>開始服務日<input id="supervisorCaseStartDate" type="date"></label>
             <label>主責居服員<input id="supervisorCaseWorker" maxlength="60" placeholder="例如：陳小美"></label>
             <label>服務狀態<select id="supervisorCaseStatus"><option value="active">服務中</option><option value="paused">暫停服務</option><option value="closed">已結案</option></select></label>
-            <div class="grid-full"><h4>服務安排</h4><p class="small-note">新增一筆安排，選固定每週、不規則多日或單次服務。相同時間、人員及服務可一次選多天；完成後收合成一列。</p><div id="supervisorWeekSchedule" class="supervisor-week-schedule"></div></div>
+            <div class="grid-full"><h4>服務安排</h4><p class="small-note">新增一筆安排，選固定每週、不規則多日或單次服務。相同時間、人員及服務可一次選多天；按「＋新增服務安排」，填好後按「完成／收合」縮成一列。</p><div id="supervisorWeekSchedule" class="supervisor-week-schedule"><p class="small-note">服務安排正在載入；若此提示未消失，請重新整理頁面。</p></div></div>
             <label class="grid-full">其他時段／排班補充<input id="supervisorCaseSchedule" maxlength="1000" placeholder="例如：隔週規則、其他排班說明"><span class="field-hint">舊版服務時間會保留在這裡，確認勾選時段後可自行整理。</span></label>
             <label>最近一次家訪日<input id="supervisorCaseLastVisit" type="date"><span class="field-hint">家訪以月份計算，例如 115/05/10 完成，下次應家訪月份為 115/08</span></label>
             <div class="grid-full"><h4>個案照顧資訊</h4><p class="small-note">以下會帶入交班單；不確定的資料可以留白。</p></div>
@@ -680,12 +680,11 @@
   <script src="js/visit.js"></script>
   <script src="js/mutation.js"></script>
   <script src="js/renewal.js"></script>
-  <script src="js/schedule-editor.js"></script>
-  <script src="js/supervisor.js"></script>
+  <script src="js/supervisor.js?v=20261002-arrfix1"></script>
   <script src="js/confirmation.js"></script>
   <script src="js/app.js"></script>
   <script src="js/notion-config.js"></script>
-  <script src="js/handover-sync.js"></script>
+  <script src="js/handover-sync.js?v=20261002-arrfix1"></script>
 
   <script>
     // GA4 功能使用追蹤：只記錄功能操作，不記錄個資或表單內容
