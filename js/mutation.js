@@ -62,6 +62,7 @@ function renderMutationSpecific(){
   const missed = ['個案外出','無人應門','個案拒絕服務','家屬取消','臨時就醫','個案失聯','其他'];
 
   const html = {
+    resume: `<div class="card"><h3 class="card-title">恢復服務</h3><div class="grid-2"><label>原暫停原因<select id="mutResumeReason">${optionList(['住院','外宿','出國','家屬自行照顧','個案拒絕服務','人力媒合中','其他'])}</select></label><label>恢復服務日期<input id="mutResumeDate" type="date"></label><label>服務安排<select id="mutResumeMode"><option>依原服務安排恢復</option><option>恢復服務並調整安排</option></select></label><label>服務項目與時段<input id="mutResumeServices" placeholder="恢復的項目、頻率與時間"></label></div><label>目前體況與服務需求<textarea id="mutResumeCondition"></textarea></label><label>備註／調整內容<textarea id="mutResumeNote"></textarea></label></div>`,
     pause: `<div class="card"><h3 class="card-title">暫停服務</h3><div class="grid-2">
       <label>暫停類型<select id="mutPauseKind"><option value="single">單次服務暫停</option><option value="period">期間暫停服務</option></select></label>
       <label>暫停原因<select id="mutPauseReason">${optionList(reasonPause)}</select></label>
@@ -180,7 +181,11 @@ function generateMutation(){
   const type = v('mutType');
   const prefix = commonNoticePrefix();
   let text = '';
-  if(type === 'pause'){
+  if(type === 'resume'){
+    if(!v('mutResumeDate')){showToast('請填寫恢復服務日期');return;}
+    if(v('mutResumeMode')==='恢復服務並調整安排'&&!v('mutResumeNote')){showToast('請填寫調整內容');return;}
+    text = `${prefix}，個案先前因${v('mutResumeReason')}暫停服務，預計自${rocDate(v('mutResumeDate'))}起恢復服務。${v('mutResumeCondition') ? `目前體況與服務需求：${v('mutResumeCondition')}。` : ''}${v('mutResumeMode')}。${v('mutResumeServices') ? `服務項目與時段：${v('mutResumeServices')}。` : ''}${v('mutResumeNote') ? `補充說明：${v('mutResumeNote')}。` : ''}以上通報。`;
+  }else if(type === 'pause'){
     const note = v('mutPauseNote') ? `，${v('mutPauseNote')}` : '';
     if(v('mutPauseKind') === 'single'){
       text = `${prefix}，因${v('mutPauseReason')}${note}，故${rocDate(v('mutPauseDate'))}單次服務暫停，以上通報。`;

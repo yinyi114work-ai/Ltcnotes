@@ -63,14 +63,14 @@ function loadSupervisorTasks(){
     })) : [];
   }catch(e){ supervisorTasks = []; }
 }
-function saveSupervisorTasks(){ localStorage.setItem(SUPERVISOR_STORAGE_KEY, JSON.stringify(supervisorTasks)); }
+function saveSupervisorTasks(){ localStorage.setItem(SUPERVISOR_STORAGE_KEY, JSON.stringify(supervisorTasks)); window.dispatchEvent(new Event('supervisor-data-changed')); }
 function loadSupervisorCases(){
   try{
     const raw = JSON.parse(localStorage.getItem(SUPERVISOR_CASE_STORAGE_KEY) || '[]');
     supervisorCases = Array.isArray(raw) ? raw.filter(item=>item && item.id).map(item=>normalizeSupervisorCase(item)) : [];
   }catch(e){ supervisorCases = []; }
 }
-function saveSupervisorCases(){ localStorage.setItem(SUPERVISOR_CASE_STORAGE_KEY, JSON.stringify(supervisorCases)); }
+function saveSupervisorCases(){ localStorage.setItem(SUPERVISOR_CASE_STORAGE_KEY, JSON.stringify(supervisorCases)); window.dispatchEvent(new Event('supervisor-data-changed')); }
 function normalizeSupervisorCase(item){
   const lastVisitDate = item.lastVisitDate || '';
   return {
@@ -83,6 +83,9 @@ function normalizeSupervisorCase(item){
     nextVisitDate: lastVisitDate ? supervisorAddMonths(lastVisitDate,3) : (item.nextVisitDate || ''),
     status: item.status === 'closed' ? 'closed' : item.status === 'paused' ? 'paused' : 'active',
     note: String(item.note || '').trim(),
+    condition: String(item.condition || '').trim(),
+    serviceDetails: String(item.serviceDetails || '').trim(),
+    handoverNote: String(item.handoverNote || '').trim(),
     followups: item.followups && typeof item.followups === 'object' ? item.followups : {},
     createdAt: item.createdAt || Date.now(),
     updatedAt: item.updatedAt || Date.now()
@@ -220,6 +223,7 @@ function renderSupervisorTasks(){
   }).join('');
   document.querySelectorAll('#supervisorTaskList .supervisor-task').forEach(card=>{
     const id=card.dataset.id;
+    card.querySelector('.case-handover')?.addEventListener('click',()=>openSupervisorHandover(id));
     card.querySelector('.task-check').addEventListener('change',e=>toggleSupervisorTask(id,e.target.checked));
     card.querySelector('.edit').addEventListener('click',()=>openSupervisorForm(supervisorTasks.find(task=>task.id===id)));
     card.querySelector('.delete').addEventListener('click',()=>deleteSupervisorTask(id));
@@ -280,13 +284,13 @@ function openSupervisorCaseForm(item){
   const form=$('supervisorCaseForm'); if(!form) return; form.hidden=false;
   $('supervisorCaseFormTitle').textContent=item?'編輯個案':'新增個案'; $('supervisorCaseId').value=item?.id||''; $('supervisorCaseName').value=item?.name||'';
   $('supervisorCaseStartDate').value=item?.startDate||''; $('supervisorCaseWorker').value=item?.homeCareWorker||''; $('supervisorCaseSchedule').value=item?.serviceSchedule||'';
-  $('supervisorCaseLastVisit').value=item?.lastVisitDate||''; $('supervisorCaseStatus').value=item?.status||'active'; $('supervisorCaseNote').value=item?.note||''; $('supervisorCaseName').focus();
+  $('supervisorCaseLastVisit').value=item?.lastVisitDate||''; $('supervisorCaseStatus').value=item?.status||'active'; $('supervisorCaseNote').value=item?.note||''; ['condition','serviceDetails','handoverNote'].forEach(k=>$(k+'Field').value=item?.[k]||''); $('supervisorCaseName').focus();
 }
 function closeSupervisorCaseForm(){ $('supervisorCaseForm').hidden=true; $('supervisorCaseId').value=''; }
 function saveSupervisorCase(){
   const name=v('supervisorCaseName'); if(!name){showToast('請填寫個案姓名');return;}
   const id=v('supervisorCaseId'), existing=supervisorCases.find(c=>c.id===id);
-  const item=normalizeSupervisorCase({id:id||`case_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,name,startDate:v('supervisorCaseStartDate'),homeCareWorker:v('supervisorCaseWorker'),serviceSchedule:v('supervisorCaseSchedule'),lastVisitDate:v('supervisorCaseLastVisit'),status:v('supervisorCaseStatus')||'active',note:v('supervisorCaseNote'),followups:existing?.followups||{},createdAt:existing?.createdAt||Date.now(),updatedAt:Date.now()});
+  const item=normalizeSupervisorCase({id:id||`case_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,name,startDate:v('supervisorCaseStartDate'),homeCareWorker:v('supervisorCaseWorker'),serviceSchedule:v('supervisorCaseSchedule'),lastVisitDate:v('supervisorCaseLastVisit'),status:v('supervisorCaseStatus')||'active',note:v('supervisorCaseNote'),condition:v('conditionField'),serviceDetails:v('serviceDetailsField'),handoverNote:v('handoverNoteField'),followups:existing?.followups||{},createdAt:existing?.createdAt||Date.now(),updatedAt:Date.now()});
   if(existing) supervisorCases=supervisorCases.map(c=>c.id===id?item:c); else supervisorCases.push(item); saveSupervisorCases(); closeSupervisorCaseForm(); renderSupervisorCases(); showToast(existing?'已更新個案':'已新增個案');
 }
 function deleteSupervisorCase(id){ const item=supervisorCases.find(c=>c.id===id); if(!item||!confirm(`確定刪除「${item.name}」？`))return; supervisorCases=supervisorCases.filter(c=>c.id!==id);saveSupervisorCases();renderSupervisorCases(); }
@@ -380,11 +384,12 @@ function renderSupervisorCases(){
       <label class="visit-simple-check"><input class="case-home-simple" type="checkbox" ${homeDone?'checked':''} ${inactive||unset?'disabled':''}><span>✓</span></label>
       <label class="visit-simple-check"><input class="case-phone-simple" type="checkbox" ${phoneDone?'checked':''} ${inactive||unset?'disabled':''}><span>✓</span></label>
       <div><button class="secondary-btn case-schedule" type="button" ${inactive||unset?'disabled':''}>${sched?'改期':'排家訪'}</button></div>
-      <div><button class="task-action case-edit" type="button">編輯</button></div>
+      <div><button class="task-action case-edit" type="button">編輯</button><button class="task-action case-handover" type="button">交班</button></div>
     </article>`;
   }).join('');
   document.querySelectorAll('#supervisorCaseList .supervisor-case-card').forEach(card=>{
     const id=card.dataset.id;
+    card.querySelector('.case-handover')?.addEventListener('click',()=>openSupervisorHandover(id));
     card.querySelector('.case-schedule')?.addEventListener('click',()=>scheduleSupervisorCaseVisit(id));
     card.querySelector('.case-home-simple')?.addEventListener('change',()=>toggleSupervisorMonthlyVisit(id,'homevisit'));
     card.querySelector('.case-phone-simple')?.addEventListener('change',()=>toggleSupervisorMonthlyVisit(id,'phonevisit'));
@@ -422,7 +427,7 @@ function mapSupervisorImportRow(row){
     serviceSchedule:read(['服務時間','服務頻率','服務型態','serviceSchedule']),
     lastVisitDate:normalizeImportedDate(read(['最近家訪日','最近家訪日期','上次家訪日','lastVisitDate'])),
     status,
-    note:read(['備註','note'])
+    note:read(['備註','note']),condition:read(['個案體況','condition']),serviceDetails:read(['服務細節','serviceDetails']),handoverNote:read(['交班備註','handoverNote'])
   });
 }
 function normalizeImportedDate(value){
@@ -455,7 +460,12 @@ async function importSupervisorCases(file){
     const byName=new Map(supervisorCases.map(item=>[item.name,item]));
     imported.forEach(item=>{
       const old=byName.get(item.name);
-      if(old){ Object.assign(old,{...item,id:old.id,createdAt:old.createdAt,updatedAt:Date.now()}); }
+      if(old){
+        const source=rows.find(row=>mapSupervisorImportRow(row)?.name===item.name)||{};
+        const fields={condition:['個案體況','condition'],serviceDetails:['服務細節','serviceDetails'],handoverNote:['交班備註','handoverNote']};
+        for(const [key,aliases] of Object.entries(fields))if(!Object.keys(source).some(k=>aliases.includes(String(k).trim())))item[key]=old[key]||'';
+        Object.assign(old,{...item,followups:old.followups||{},id:old.id,createdAt:old.createdAt,updatedAt:Date.now()});
+      }
       else { supervisorCases.push(item); byName.set(item.name,item); }
     });
     saveSupervisorCases(); renderSupervisorCases(); showToast(`已匯入 ${imported.length} 筆個案`);
@@ -463,12 +473,12 @@ async function importSupervisorCases(file){
   finally{ $('supervisorCaseFile').value=''; }
 }
 function downloadSupervisorTemplate(){
-  const headers=['個案姓名','開始服務日','居服員','服務時間','最近家訪日','狀態','備註'];
+  const headers=['個案姓名','開始服務日','居服員','服務時間','最近家訪日','狀態','備註','個案體況','服務細節','交班備註'];
   if(typeof XLSX!=='undefined'){
-    const ws=XLSX.utils.aoa_to_sheet([headers,['','','','','','','']]); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'居督個案名單'); XLSX.writeFile(wb,'居督個案名單_空白範本.xlsx');
+    const ws=XLSX.utils.aoa_to_sheet([headers,headers.map(()=> '')]); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'居督個案名單'); XLSX.writeFile(wb,'居督個案名單_空白範本.xlsx');
     return;
   }
-  const csv='\uFEFF個案姓名,開始服務日,居服員,服務時間,最近家訪日,狀態,備註\n';
+  const csv='\uFEFF'+headers.join(',')+'\n';
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='居督個案名單_空白範本.csv'; a.click(); URL.revokeObjectURL(url);
 }
 
@@ -481,7 +491,7 @@ function supervisorExportRows(){
       rows.push({
         '個案姓名':item.name,'服務狀態':item.status==='active'?'服務中':item.status==='paused'?'暫停服務':'已結案',
         '開始服務日':item.startDate||'','居服員':item.homeCareWorker||'','服務時間':item.serviceSchedule||'',
-        '最近家訪日':item.lastVisitDate||'','月份':'','家訪完成':'','電訪完成':'','排定家訪日期':'','排定家訪時間':'','備註':item.note||''
+        '最近家訪日':item.lastVisitDate||'','月份':'','家訪完成':'','電訪完成':'','排定家訪日期':'','排定家訪時間':'','備註':item.note||'','個案體況':item.condition||'','服務細節':item.serviceDetails||'','交班備註':item.handoverNote||''
       });
       return;
     }
@@ -494,7 +504,7 @@ function supervisorExportRows(){
         '開始服務日':item.startDate||'','居服員':item.homeCareWorker||'','服務時間':item.serviceSchedule||'',
         '最近家訪日':item.lastVisitDate||'','月份':month,
         '家訪完成':(r.homeCompleted||legacyHome)?'V':'','電訪完成':(r.phoneCompleted||legacyPhone)?'V':'',
-        '排定家訪日期':r.scheduledDate||'','排定家訪時間':r.scheduledTime||'','備註':item.note||''
+        '排定家訪日期':r.scheduledDate||'','排定家訪時間':r.scheduledTime||'','備註':item.note||'','個案體況':item.condition||'','服務細節':item.serviceDetails||'','交班備註':item.handoverNote||''
       });
     });
   });
@@ -528,7 +538,7 @@ function clearSupervisorData(){
   if(verify!=='清除'){showToast('已取消清除');return;}
   localStorage.removeItem(SUPERVISOR_STORAGE_KEY);
   localStorage.removeItem(SUPERVISOR_CASE_STORAGE_KEY);
-  supervisorTasks=[]; supervisorCases=[]; supervisorSelectedDate='';
+  supervisorTasks=[]; supervisorCases=[]; supervisorSelectedDate=''; window.dispatchEvent(new Event('supervisor-data-changed'));
   renderSupervisorDashboard(); renderSupervisorCases(); showToast('已清除居督工作台本機資料');
 }
 

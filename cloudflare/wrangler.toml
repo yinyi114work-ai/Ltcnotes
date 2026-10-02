@@ -1,0 +1,13 @@
+name = "ltc-supervisor-notion"
+main = "worker.mjs"
+compatibility_date = "2026-10-02"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ltc-supervisor-notion-db"
+database_id = "REPLACE_WITH_SUPERVISOR_D1_DATABASE_ID"
+
+[vars]
+NOTION_CLIENT_ID = "REPLACE_WITH_SUPERVISOR_NOTION_CLIENT_ID"
+NOTION_REDIRECT_URI = "https://REPLACE_WITH_SUPERVISOR_WORKER.workers.dev/auth/notion/callback"
+# Secrets: NOTION_CLIENT_SECRET, TOKEN_ENCRYPTION_KEY

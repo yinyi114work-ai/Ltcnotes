@@ -488,3 +488,13 @@ footer{text-align:center;padding:26px;color:var(--muted);border-top:1px solid va
 
 .supervisor-header-actions .danger-btn{border:1px solid rgba(170,70,70,.35);background:rgba(170,70,70,.07);color:inherit;border-radius:10px;padding:9px 13px;font:inherit;font-weight:700;cursor:pointer}
 .supervisor-header-actions .danger-btn:hover{background:rgba(170,70,70,.13)}
+
+/* 交班與同步 */
+#supervisorHandover textarea, #conditionField, #serviceDetailsField, #handoverNoteField {min-height:100px;resize:vertical;}
+#handoverOutput {min-height:260px;}
+#supervisorSyncStatus {overflow-wrap:anywhere;}
+#supervisorHandover label {display:block;margin:12px 0;}
+#supervisorHandover input,#supervisorHandover textarea {width:100%;box-sizing:border-box;}
+#supervisorSyncPanel .button-row {flex-wrap:wrap;}
+.visit-simple-row .case-handover {margin-left:8px;}
+@media(max-width:640px){#supervisorSyncPanel .button-row button{flex:1 1 45%;}.visit-simple-row .case-handover{margin-left:0;}}

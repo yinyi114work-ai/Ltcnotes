@@ -162,6 +162,20 @@
         </div>
       </div>
 
+      <div class="card" id="supervisorSyncPanel">
+        <h3>☁️ 居督 Notion 同步</h3>
+        <p id="supervisorSyncStatus" role="status" aria-live="polite">尚未連結</p>
+        <div class="button-row"><button id="supervisorConnect" type="button" class="secondary-btn">連結 Notion</button><button id="supervisorPull" type="button" class="secondary-btn">讀取雲端資料</button><button id="supervisorPush" type="button" class="primary-btn">儲存至 Notion</button><button id="supervisorDisconnect" type="button" class="ghost-btn">解除連結</button><button id="supervisorJsonBackup" type="button" class="secondary-btn">完整備份 JSON</button><button id="supervisorJsonRestore" type="button" class="secondary-btn">還原 JSON 備份</button><input id="supervisorJsonFile" type="file" accept=".json" hidden></div>
+        <p class="small-note">更換裝置後先讀取雲端資料。編輯後請按「儲存至 Notion」；資料衝突時會停止上傳。Notion 表格供查閱，請在小工具內修改。</p>
+      </div>
+      <div class="card" id="supervisorHandover" hidden>
+        <div class="supervisor-form-heading"><h3>📋 個案交班</h3><button id="handoverClose" type="button" class="icon-btn" aria-label="關閉交班">×</button></div>
+        <p id="handoverUpdated" class="small-note"></p>
+        <div class="grid-2"><label>個案稱呼／代號<input id="handoverName"></label><label>本次服務日期<input id="handoverDate" type="date"></label><label>本次時段<input id="handoverTime" placeholder="09:00–10:00"></label><label>本次服務項目<input id="handoverServices" placeholder="例如：沐浴、家務"></label></div>
+        <label>個案體況<textarea id="handoverCondition"></textarea></label><label>服務細節<textarea id="handoverDetails"></textarea></label><label>交班備註<textarea id="handoverNotes"></textarea></label><label>本次臨時交代<textarea id="handoverTemporary"></textarea></label>
+        <p class="small-note">本次調整只用於這份交班；固定資料請至個案編輯更新。送出前確認內容及分享對象。</p>
+        <div class="button-row"><button id="handoverPreview" type="button" class="secondary-btn">產生預覽</button><button id="handoverCopy" type="button" class="primary-btn">複製交班</button></div><label>交班預覽（可修改）<textarea id="handoverOutput" rows="12"></textarea></label>
+      </div>
       <div class="supervisor-mode-switch" role="tablist" aria-label="居督工作台模式">
         <button class="supervisor-mode-btn" data-supervisor-view="tasks" type="button">待辦・行事曆</button>
         <button class="supervisor-mode-btn active" data-supervisor-view="cases" type="button">個案管理</button>
@@ -238,13 +252,16 @@
             <label>服務狀態<select id="supervisorCaseStatus"><option value="active">服務中</option><option value="paused">暫停服務</option><option value="closed">已結案</option></select></label>
             <label class="grid-full">服務時間／型態<input id="supervisorCaseSchedule" maxlength="120" placeholder="例如：週一、三、五 09:00–11:00"></label>
             <label>最近一次家訪日<input id="supervisorCaseLastVisit" type="date"><span class="field-hint">家訪以月份計算，例如 115/05/10 完成，下次應家訪月份為 115/08</span></label>
-            <label class="grid-full">備註<textarea id="supervisorCaseNote" maxlength="300" placeholder="只記需要提醒自己的重點即可"></textarea></label>
+            <label class="grid-full">個案體況<textarea id="conditionField" maxlength="3000" placeholder="溝通、行走移位、輔具、協助程度及近期變化"></textarea></label>
+            <label class="grid-full">服務細節<textarea id="serviceDetailsField" maxlength="3000" placeholder="服務項目、操作方式、順序、用品位置及個案習慣"></textarea></label>
+            <label class="grid-full">交班備註<textarea id="handoverNoteField" maxlength="3000" placeholder="家屬交代、入家方式、注意事項及需回報的事情"></textarea></label>
+            <label class="grid-full">內部備註（不自動帶入交班）<textarea id="supervisorCaseNote" maxlength="300" placeholder="只記需要提醒自己的重點即可"></textarea></label>
           </div>
           <div class="button-row"><button id="supervisorSaveCase" class="primary-btn" type="button">儲存個案</button><button id="supervisorCancelCase" class="ghost-btn" type="button">取消</button></div>
         </div>
 
         <div class="supervisor-case-help"><strong>追蹤方式：</strong>每位個案直接勾選本月實際完成的「家訪」或「電訪」。系統仍會將每 3 個月應家訪的個案排在前面；原應電訪個案若臨時改為家訪，可直接勾選家訪。需要安排時間時，再按「排家訪」。</div>
-        <div class="supervisor-local-notice"><strong>本機操作・個資提醒</strong><br>本工具資料僅儲存在目前使用的瀏覽器／裝置，不會自動跨裝置同步；清除瀏覽器網站資料可能造成紀錄遺失。請避免於共用或公用裝置儲存個案資料，並妥善管理使用裝置。</div>
+        <div class="supervisor-local-notice"><strong>本機操作・個資提醒</strong><br>未連結時，資料僅儲存在目前瀏覽器／裝置；連結 Notion 後可手動儲存及讀取，共用同一份居督資料。清除瀏覽器網站資料可能造成未同步紀錄遺失。請避免於共用或公用裝置儲存個案資料，並妥善管理使用裝置。</div>
         <div class="supervisor-disclaimer"><strong>免責聲明</strong><br>本工具僅供長照工作人員日常工作整理與輔助使用，非正式長照資訊系統。實際服務、紀錄、申報及相關作業，仍應依主管機關規定、機構作業流程及正式系統資料為準。</div>
         <div id="supervisorCaseList" class="supervisor-case-list"></div>
       </div>
@@ -511,6 +528,7 @@
               <label>通報類型
                 <select id="mutType">
                   <option value="pause">暫停服務</option>
+                  <option value="resume">恢復服務</option>
                   <option value="end">結束服務</option>
                   <option value="first">第一次服務進場</option>
                   <option value="delay">未能於時效內進場服務</option>
@@ -651,6 +669,8 @@
   <script src="js/supervisor.js"></script>
   <script src="js/confirmation.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/notion-config.js"></script>
+  <script src="js/handover-sync.js"></script>
 
   <script>
     // GA4 功能使用追蹤：只記錄功能操作，不記錄個資或表單內容

@@ -1,0 +1,1 @@
+window.SUPERVISOR_NOTION_WORKER = 'https://ltc-supervisor-notion.yinyi114work.workers.dev';
