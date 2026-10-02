@@ -127,7 +127,7 @@
       <button class="supervisor-tool-card" data-open-tool="feeTool" type="button"><span class="tool-card-icon">💰</span><strong>服務費用預估</strong><small>快速估算民眾自付費用</small></button>
       <button class="supervisor-tool-card" data-open-tool="visitTool" type="button"><span class="tool-card-icon">🏠</span><strong>家訪紀錄生成器</strong><small>整理家訪紀錄重點</small></button>
       <button class="supervisor-tool-card" data-open-tool="mutationTool" type="button"><span class="tool-card-icon">⚠️</span><strong>異動通報產生器</strong><small>快速整理異動通報內容</small></button>
-      <button class="supervisor-tool-card" data-open-tool="renewalTool" type="button"><span class="tool-card-icon">🪪</span><strong>換證檢核器</strong><small>檢查積分與換證條件</small></button>
+      <button class="supervisor-tool-card" data-open-tool="renewalTool" type="button"><span class="tool-card-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="26" height="20" rx="3"/><circle cx="11" cy="13" r="3"/><path d="M6 22c0-6 10-6 10 0M20 12h5M20 17h5M20 22h3"/></svg></span><strong>換證檢核器</strong><small>檢查積分與換證條件</small></button>
       <a class="supervisor-tool-card" href="./law/"><span class="tool-card-icon">📚</span><strong>長照法規速查</strong><small>碼別、關鍵字與歷年函釋</small></a>
     </div>
   </section>
@@ -166,7 +166,7 @@
         <h3>☁️ 居督 Notion 同步</h3>
         <p id="supervisorSyncStatus" role="status" aria-live="polite">尚未連結</p>
         <div class="button-row"><button id="supervisorConnect" type="button" class="secondary-btn">連結 Notion</button><button id="supervisorPull" type="button" class="secondary-btn">讀取雲端資料</button><button id="supervisorPush" type="button" class="primary-btn">儲存至 Notion</button><button id="supervisorDisconnect" type="button" class="ghost-btn">解除連結</button><button id="supervisorJsonBackup" type="button" class="secondary-btn">完整備份 JSON</button><button id="supervisorJsonRestore" type="button" class="secondary-btn">還原 JSON 備份</button><input id="supervisorJsonFile" type="file" accept=".json" hidden></div>
-        <p class="small-note">更換裝置後先讀取雲端資料。編輯後請按「儲存至 Notion」；資料衝突時會停止上傳。Notion 表格供查閱，請在小工具內修改。</p>
+        <p class="small-note">個案、體況、服務細節、交班備註與待辦，皆在小工具內輸入及修改；Notion 負責資料整理、查閱與存取。更換裝置後先按「讀取雲端資料」，編輯完成後按「儲存至 Notion」（目前為手動同步）。資料衝突時會停止上傳。</p>
       </div>
       <div class="card" id="supervisorHandover" hidden>
         <div class="supervisor-form-heading"><h3>📋 個案交班</h3><button id="handoverClose" type="button" class="icon-btn" aria-label="關閉交班">×</button></div>
@@ -229,6 +229,7 @@
       </div>
 
       <div id="supervisorCaseView">
+        <div class="card"><strong>個案資料與交班</strong><p>按「＋新增個案」或個案的「編輯」，填寫個案體況、服務細節及交班備註。再按個案右側的「產出交班資訊」，預覽並複製給代班人員。內部備註不會自動帶入交班。</p></div>
         <div class="supervisor-month-nav card">
           <button id="supervisorTrackingPrev" class="icon-btn" type="button" aria-label="上個月">‹</button>
           <div><strong id="supervisorTrackingMonthLabel"></strong><span>個案追蹤</span></div>

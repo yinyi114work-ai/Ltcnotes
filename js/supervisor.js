@@ -384,7 +384,7 @@ function renderSupervisorCases(){
       <label class="visit-simple-check"><input class="case-home-simple" type="checkbox" ${homeDone?'checked':''} ${inactive||unset?'disabled':''}><span>✓</span></label>
       <label class="visit-simple-check"><input class="case-phone-simple" type="checkbox" ${phoneDone?'checked':''} ${inactive||unset?'disabled':''}><span>✓</span></label>
       <div><button class="secondary-btn case-schedule" type="button" ${inactive||unset?'disabled':''}>${sched?'改期':'排家訪'}</button></div>
-      <div><button class="task-action case-edit" type="button">編輯</button><button class="task-action case-handover" type="button">交班</button></div>
+      <div><button class="task-action case-edit" type="button">編輯</button><button class="task-action case-handover" type="button">產出交班資訊</button></div>
     </article>`;
   }).join('');
   document.querySelectorAll('#supervisorCaseList .supervisor-case-card').forEach(card=>{
